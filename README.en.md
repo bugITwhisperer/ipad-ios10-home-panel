@@ -1,4 +1,4 @@
-# 🌤️📅📝 Home panel on an old iPad
+# 🌤️📅📝 Home Panel - iPad iOS 10
 
 [🇵🇱 Polski](README.md) · **🇬🇧 English**
 
