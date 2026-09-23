@@ -5,16 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Pogoda">
+<meta name="apple-mobile-web-app-title" content="Panel">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Pogoda</title>
+<title>Panel</title>
 <style>
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
+  margin: 0; padding: 0; height: 100%;
   background-color: #10161f;
   color: #e8eef6;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -24,160 +22,79 @@ html, body {
   overflow: hidden;
 }
 
-#app {
-  box-sizing: border-box;
-  height: 100%;
-  padding: 26px 30px 20px 30px;
-}
+#app { box-sizing: border-box; height: 100%; padding: 22px 30px 16px 30px; }
 
 /* ---------- top bar ---------- */
 .top {
-  display: -webkit-box;
-  display: flex;
-  -webkit-box-align: start;
-  align-items: flex-start;
-  -webkit-box-pack: justify;
-  justify-content: space-between;
+  display: -webkit-box; display: flex;
+  -webkit-box-align: start; align-items: flex-start;
+  -webkit-box-pack: justify; justify-content: space-between;
 }
+.place { font-size: 22px; font-weight: 300; letter-spacing: 0.12em; color: #7d92ab; margin: 0 0 2px 0; }
+.stamp { font-size: 15px; color: #56687d; margin: 0; }
 
-.place {
-  font-size: 22px;
-  font-weight: 300;
-  letter-spacing: 0.12em;
-  color: #7d92ab;
-  margin: 0 0 2px 0;
-}
-
-.stamp {
-  font-size: 15px;
-  color: #56687d;
-  margin: 0;
-}
-
-select {
-  font-family: inherit;
-  font-size: 19px;
-  color: #e8eef6;
-  background-color: #1d2735;
-  border: 1px solid #33455c;
-  border-radius: 7px;
-  padding: 9px 13px;
-  -webkit-appearance: none;
-  appearance: none;
-  min-width: 165px;
-}
-
-/* ---------- now ---------- */
-.now {
-  display: -webkit-box;
-  display: flex;
-  -webkit-box-align: center;
-  align-items: center;
-  margin: 14px 0 20px 0;
-}
-
-.now-icon {
-  font-size: 74px;
-  line-height: 1;
-  margin-right: 24px;
-}
-
-.now-temp {
-  font-size: 96px;
-  font-weight: 200;
-  line-height: 0.92;
-  color: #ffc46b;
-  margin-right: 28px;
-}
-
-.now-text {
-  font-size: 25px;
-  font-weight: 300;
-  line-height: 1.35;
-  color: #b9c9db;
-}
-
-.now-text span {
-  color: #7d92ab;
-  font-size: 19px;
-}
-
-/* ---------- strip ---------- */
-#strip {
-  display: -webkit-box;
-  display: flex;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px;
-}
-
-.cell {
-  -webkit-box-flex: 1;
-  flex: 1 0 auto;
-  min-width: 96px;
-  text-align: center;
-  padding: 15px 8px 17px 8px;
-  margin-right: 9px;
-  background-color: #17202c;
-  border-radius: 9px;
+/* ---------- view tabs ---------- */
+#tabs { display: -webkit-box; display: flex; }
+.tab {
+  font-size: 17px; color: #6f8299;
+  padding: 8px 15px; margin-left: 7px;
+  background-color: #17202c; border-radius: 7px;
   border-top: 2px solid #2b3a4d;
 }
+.tab.on { color: #e8eef6; border-top-color: #ffc46b; background-color: #1d2735; }
 
+select {
+  font-family: inherit; font-size: 18px; color: #e8eef6;
+  background-color: #1d2735; border: 1px solid #33455c;
+  border-radius: 7px; padding: 8px 12px;
+  -webkit-appearance: none; appearance: none;
+  min-width: 160px; margin-top: 9px;
+}
+
+/* ---------- views ---------- */
+.view { display: none; }
+.view.on { display: block; }
+
+/* ---------- weather ---------- */
+.now { display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center; margin: 8px 0 12px 0; }
+.now-icon { font-size: 58px; line-height: 1; margin-right: 22px; }
+.now-temp { font-size: 74px; font-weight: 200; line-height: 0.92; color: #ffc46b; margin-right: 26px; }
+.now-text { font-size: 24px; font-weight: 300; line-height: 1.35; color: #b9c9db; }
+.now-text span { color: #7d92ab; font-size: 18px; }
+
+#strip-today, #strip-next { display: -webkit-box; display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
+.cell {
+  -webkit-box-flex: 1; flex: 1 0 auto; min-width: 84px;
+  text-align: center; padding: 10px 7px 11px 7px; margin-right: 8px;
+  background-color: #17202c; border-radius: 9px; border-top: 2px solid #2b3a4d;
+}
 .cell:last-child { margin-right: 0; }
-
 .cell.edge { border-top-color: #ffc46b; }
+.c-when { font-size: 16px; color: #7d92ab; margin-bottom: 7px; }
+.c-icon { font-size: 25px; line-height: 1; margin-bottom: 7px; }
+.c-temp { font-size: 23px; font-weight: 300; color: #ffc46b; margin-bottom: 2px; }
+.c-lo { font-size: 18px; color: #6f8299; margin-bottom: 7px; }
+.c-rain { font-size: 15px; color: #6fb6f0; margin-bottom: 3px; }
+.c-wind { font-size: 15px; color: #7d92ab; }
 
-.c-when {
-  font-size: 17px;
-  color: #7d92ab;
-  margin-bottom: 8px;
-}
+/* ---------- stubs ---------- */
+.stub { margin-top: 40px; font-size: 24px; font-weight: 300; line-height: 1.6; color: #6f8299; }
+.stub b { display: block; font-weight: 400; font-size: 30px; color: #b9c9db; margin-bottom: 10px; }
 
-.c-icon {
-  font-size: 31px;
-  line-height: 1;
-  margin-bottom: 8px;
+.strip-head {
+  font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #56687d; margin: 4px 0 7px 0;
 }
+.msg { margin-top: 30px; font-size: 22px; font-weight: 300; line-height: 1.5; color: #8fa3b8; }
+.msg b { display: block; font-weight: 400; color: #e8eef6; margin-bottom: 6px; }
 
-.c-temp {
-  font-size: 27px;
-  font-weight: 300;
-  color: #ffc46b;
-  margin-bottom: 2px;
+/* ---------- night ---------- */
+#night {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #000;
+  display: none;
 }
-
-.c-lo {
-  font-size: 19px;
-  color: #6f8299;
-  margin-bottom: 8px;
-}
-
-.c-rain {
-  font-size: 16px;
-  color: #6fb6f0;
-  margin-bottom: 3px;
-}
-
-.c-wind {
-  font-size: 16px;
-  color: #7d92ab;
-}
-
-/* ---------- states ---------- */
-.msg {
-  margin-top: 34px;
-  font-size: 23px;
-  font-weight: 300;
-  line-height: 1.5;
-  color: #8fa3b8;
-}
-
-.msg b {
-  display: block;
-  font-weight: 400;
-  color: #e8eef6;
-  margin-bottom: 6px;
-}
+#night.on { display: block; }
 </style>
 </head>
 <body>
@@ -187,18 +104,35 @@ select {
     <div>
       <p class="place" id="place">Lublin</p>
       <p class="stamp" id="stamp">Wczytywanie...</p>
+      <select id="range">
+        <option value="tomorrow">Jutro, godzinowo</option>
+        <option value="3">Najbli&#380;sze 3 dni</option>
+        <option value="5">Najbli&#380;sze 5 dni</option>
+        <option value="7">Najbli&#380;szych 7 dni</option>
+      </select>
     </div>
-    <select id="range">
-      <option value="today">Dzisiaj, godzinowo</option>
-      <option value="3">Najbli&#380;sze 3 dni</option>
-      <option value="5">Najbli&#380;sze 5 dni</option>
-    </select>
+    <div id="tabs"></div>
   </div>
 
-  <div id="now"></div>
-  <div id="strip"></div>
-  <div id="msg"></div>
+  <div class="view" id="view-pogoda">
+    <div id="now"></div>
+    <p class="strip-head" id="head-today">Dzisiaj</p>
+    <div id="strip-today"></div>
+    <div id="msg-today"></div>
+    <p class="strip-head" id="head-next">Jutro</p>
+    <div id="strip-next"></div>
+  </div>
+
+  <div class="view" id="view-kalendarz">
+    <p class="stub"><b>Kalendarz</b>Etap B &mdash; wydarzenia na dzi&#347; ze wsp&#243;lnego kalendarza.</p>
+  </div>
+
+  <div class="view" id="view-lista">
+    <p class="stub"><b>Lista zakup&#243;w</b>Etap C &mdash; pozycje z arkusza, odhaczane palcem.</p>
+  </div>
 </div>
+
+<div id="night"></div>
 
 <script>
 var LAT = 51.2465;
@@ -210,12 +144,24 @@ var API = "https://api.open-meteo.com/v1/forecast" +
   "&hourly=temperature_2m,weather_code,precipitation_probability,wind_speed_10m" +
   "&daily=weather_code,temperature_2m_max,temperature_2m_min," +
   "precipitation_probability_max,wind_speed_10m_max,sunrise,sunset" +
-  "&timezone=Europe%2FWarsaw&forecast_days=6";
+  "&timezone=Europe%2FWarsaw&forecast_days=8";
 
 var DNI = ["niedziela", "poniedzia\u0142ek", "wtorek", "\u015broda",
            "czwartek", "pi\u0105tek", "sobota"];
 
-/* ---------- pure logic ---------- */
+/* rotation plan: weather gets half the loop */
+var VIEWS = [
+  { id: "pogoda",    label: "Pogoda",  ms: 600000 },
+  { id: "kalendarz", label: "Kalendarz", ms: 300000 },
+  { id: "lista",     label: "Zakupy",  ms: 300000 }
+];
+
+var PAUSE_MS = 300000;   /* touch in daytime holds the view */
+var WAKE_MS  = 30000;    /* touch at night lights the screen */
+var DIM_MIN  = 30;       /* screen goes dark at 00:30 */
+var DAWN_LEAD_MS = 300000; /* lights up 5 min before sunrise */
+
+/* ---------- weather logic (unchanged from v1) ---------- */
 
 function wmo(code) {
   if (code === 0) return { icon: "\u2600\uFE0F", text: "bezchmurnie" };
@@ -233,9 +179,7 @@ function wmo(code) {
   return { icon: "\uD83C\uDF21", text: "brak danych" };
 }
 
-function hhmm(iso) {
-  return iso.slice(11, 16);
-}
+function hhmm(iso) { return iso.slice(11, 16); }
 
 function dayLabel(iso, todayIso) {
   if (iso.slice(0, 10) === todayIso.slice(0, 10)) return "dzisiaj";
@@ -249,11 +193,10 @@ function round(n) {
   return Math.round(n);
 }
 
+/* daily strip starts at TOMORROW: today already has its own hourly strip above */
 function buildDaily(data, count, todayIso) {
-  var d = data.daily;
-  var out = [];
-  var i;
-  for (i = 0; i < count && i < d.time.length; i++) {
+  var d = data.daily, out = [], i;
+  for (i = 1; i <= count && i < d.time.length; i++) {
     out.push({
       when: dayLabel(d.time[i], todayIso),
       icon: wmo(d.weather_code[i]).icon,
@@ -268,52 +211,49 @@ function buildDaily(data, count, todayIso) {
   return out;
 }
 
-function buildHourly(data, nowIso) {
+/* today: from the current hour through 23:00. Past hours are dropped, not dimmed.
+   Sunrise/sunset no longer bound this strip - they only drive night mode. */
+function buildToday(data, nowIso) {
   var h = data.hourly;
-  var sunrise = data.daily.sunrise[0];
-  var sunset = data.daily.sunset[0];
-  var out = [];
-  var i;
+  var day = nowIso.slice(0, 10);
+  var fromHour = nowIso.slice(0, 13) + ":00";
+  var out = [], i;
   for (i = 0; i < h.time.length; i++) {
     var t = h.time[i];
-    if (t.slice(0, 10) !== nowIso.slice(0, 10)) continue;
-    if (t < sunrise.slice(0, 13) + ":00") continue;
-    if (t > sunset) continue;
-    out.push({
-      when: hhmm(t),
-      icon: wmo(h.weather_code[i]).icon,
-      text: wmo(h.weather_code[i]).text,
-      temp: round(h.temperature_2m[i]),
-      lo: null,
-      rain: round(h.precipitation_probability[i]),
-      wind: round(h.wind_speed_10m[i]),
-      edge: false,
-      past: t < nowIso.slice(0, 13) + ":00"
-    });
-  }
-  var future = 0;
-  for (i = 0; i < out.length; i++) if (!out[i].past) future++;
-  if (future === 0) return [];
-
-  if (out.length > 0) {
-    out[0].edge = true;
-    out[out.length - 1].edge = true;
+    if (t.slice(0, 10) !== day) continue;
+    if (t < fromHour) continue;
+    out.push(hourCell(h, i));
   }
   return out;
 }
 
-function emptyHourlyMessage(data, nowIso) {
-  var sunset = data.daily.sunset[0];
-  if (nowIso > sunset) {
-    return {
-      head: "S\u0142o\u0144ce ju\u017c zasz\u0142o",
-      body: "Dzi\u015b zachodzi\u0142o o " + hhmm(sunset) +
-            ". Wybierz 3 lub 5 dni, \u017ceby zobaczy\u0107 prognoz\u0119."
-    };
+/* tomorrow: from tomorrow's own sunrise through 23:00 */
+function buildTomorrow(data) {
+  var h = data.hourly;
+  if (!data.daily.sunrise[1]) return [];
+  var sunrise = data.daily.sunrise[1];
+  var day = sunrise.slice(0, 10);
+  var fromHour = sunrise.slice(0, 13) + ":00";
+  var out = [], i;
+  for (i = 0; i < h.time.length; i++) {
+    var t = h.time[i];
+    if (t.slice(0, 10) !== day) continue;
+    if (t < fromHour) continue;
+    out.push(hourCell(h, i));
   }
+  return out;
+}
+
+function hourCell(h, i) {
   return {
-    head: "Brak godzin do pokazania",
-    body: "Spr\u00f3buj widoku 3 lub 5 dni."
+    when: hhmm(h.time[i]),
+    icon: wmo(h.weather_code[i]).icon,
+    text: wmo(h.weather_code[i]).text,
+    temp: round(h.temperature_2m[i]),
+    lo: null,
+    rain: round(h.precipitation_probability[i]),
+    wind: round(h.wind_speed_10m[i]),
+    edge: false
   };
 }
 
@@ -323,6 +263,80 @@ function msUntil4am(now) {
     t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 4, 0, 0, 0);
   }
   return t.getTime() - now.getTime();
+}
+
+/* ---------- night mode ---------- */
+
+function parseLocal(iso) {
+  var d = iso.slice(0, 10).split("-");
+  var t = iso.slice(11, 16).split(":");
+  return new Date(Number(d[0]), Number(d[1]) - 1, Number(d[2]),
+                  Number(t[0]), Number(t[1]), 0, 0);
+}
+
+/* lights up DAWN_LEAD_MS before whatever sunrise the API reported */
+function dawnTime(sunriseIso) {
+  return new Date(parseLocal(sunriseIso).getTime() - DAWN_LEAD_MS);
+}
+
+function dimStart(now) {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, DIM_MIN, 0, 0);
+}
+
+/* the dark window always belongs to ONE calendar day: 00:30 -> dawn that morning.
+   The API's sunrise may carry a different date (cached, or already tomorrow's),
+   so only its clock time is used, pinned to the day we are actually in. */
+function dawnToday(now, sunriseIso) {
+  var t = sunriseIso.slice(11, 16).split(":");
+  var d = new Date(now.getFullYear(), now.getMonth(), now.getDate(),
+                   Number(t[0]), Number(t[1]), 0, 0);
+  return new Date(d.getTime() - DAWN_LEAD_MS);
+}
+
+function isDark(now, sunriseIso) {
+  var dawn = dawnToday(now, sunriseIso);
+  var dim = dimStart(now);
+  if (now.getTime() < dim.getTime()) return false;
+  return now.getTime() < dawn.getTime();
+}
+
+/* ---------- state machine ---------- */
+
+function createState() {
+  return { viewIndex: 0, pausedUntil: 0, wakeUntil: 0 };
+}
+
+function currentView(state) { return VIEWS[state.viewIndex].id; }
+
+function advance(state) {
+  state.viewIndex = (state.viewIndex + 1) % VIEWS.length;
+  return VIEWS[state.viewIndex];
+}
+
+/* single source of truth for what the screen should be doing right now */
+function decide(state, now, sunriseIso) {
+  var ms = now.getTime();
+  var dark = isDark(now, sunriseIso);
+  if (dark) {
+    var awake = ms < state.wakeUntil;
+    return { view: currentView(state), dark: !awake, rotating: false, night: true };
+  }
+  var paused = ms < state.pausedUntil;
+  return { view: currentView(state), dark: false, rotating: !paused, night: false };
+}
+
+function onTouch(state, now, sunriseIso) {
+  if (isDark(now, sunriseIso)) {
+    state.wakeUntil = now.getTime() + WAKE_MS;   /* reset, not extend-by-sum */
+  } else {
+    state.pausedUntil = now.getTime() + PAUSE_MS;
+  }
+  return state;
+}
+
+function onManualSwitch(state, now, sunriseIso) {
+  advance(state);
+  return onTouch(state, now, sunriseIso);
 }
 
 /* ---------- rendering ---------- */
@@ -354,11 +368,23 @@ function nowHtml(data) {
   return s;
 }
 
+function tabsHtml(activeId) {
+  var s = "", i;
+  for (i = 0; i < VIEWS.length; i++) {
+    s += '<div class="tab' + (VIEWS[i].id === activeId ? " on" : "") +
+         '" data-view="' + VIEWS[i].id + '">' + VIEWS[i].label + "</div>";
+  }
+  return s;
+}
+
 /* ---------- wiring ---------- */
 
 if (typeof document !== "undefined") {
   (function () {
     var cache = null;
+    var state = createState();
+    var rotTimer = null;   /* exactly one rotation timer ever exists */
+    var winTimer = null;   /* exactly one pause/wake timer ever exists */
 
     function el(id) { return document.getElementById(id); }
 
@@ -369,31 +395,84 @@ if (typeof document !== "undefined") {
              "T" + p(d.getHours()) + ":" + p(d.getMinutes());
     }
 
-    function paint() {
+    function sunriseIso() {
+      if (cache && cache.daily && cache.daily.sunrise) return cache.daily.sunrise[0];
+      var d = new Date();
+      function p(n) { return (n < 10 ? "0" : "") + n; }
+      return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T06:00";
+    }
+
+    function renderCells(cells) {
+      var html = "", i;
+      for (i = 0; i < cells.length; i++) html += cellHtml(cells[i]);
+      return html;
+    }
+
+    function paintWeather() {
       if (!cache) return;
       var nowIso = localIso();
-      var mode = el("range").value;
-      var cells;
 
       el("now").innerHTML = nowHtml(cache);
-      el("msg").innerHTML = "";
 
-      if (mode === "today") {
-        cells = buildHourly(cache, nowIso);
-        if (cells.length === 0) {
-          var m = emptyHourlyMessage(cache, nowIso);
-          el("strip").innerHTML = "";
-          el("msg").innerHTML = '<p class="msg"><b>' + m.head + "</b>" + m.body + "</p>";
-          return;
-        }
+      /* upper strip: today, independent of the dropdown */
+      var today = buildToday(cache, nowIso);
+      el("strip-today").innerHTML = renderCells(today);
+      el("msg-today").innerHTML = today.length === 0
+        ? '<p class="msg">Dzi\u015b nie ma ju\u017c pe\u0142nych godzin do pokazania.</p>'
+        : "";
+
+      /* lower strip: whatever the dropdown selects */
+      var mode = el("range").value;
+      var lower, head;
+      if (mode === "tomorrow") {
+        lower = buildTomorrow(cache);
+        head = "Jutro";
       } else {
-        cells = buildDaily(cache, Number(mode), nowIso);
+        lower = buildDaily(cache, Number(mode), nowIso);
+        head = "Najbli\u017cszych " + mode + " dni";
       }
+      el("head-next").innerHTML = head;
+      el("strip-next").innerHTML = renderCells(lower);
+    }
 
-      var html = "";
+    /* every render replaces innerHTML; nothing is ever appended */
+    function apply() {
+      var d = decide(state, new Date(), sunriseIso());
       var i;
-      for (i = 0; i < cells.length; i++) html += cellHtml(cells[i]);
-      el("strip").innerHTML = html;
+      for (i = 0; i < VIEWS.length; i++) {
+        el("view-" + VIEWS[i].id).className = "view" + (VIEWS[i].id === d.view ? " on" : "");
+      }
+      el("tabs").innerHTML = tabsHtml(d.view);
+      el("night").className = d.dark ? "on" : "";
+      if (d.view === "pogoda") paintWeather();
+      schedule(d);
+    }
+
+    function schedule(d) {
+      if (rotTimer) { clearTimeout(rotTimer); rotTimer = null; }
+      if (!d.rotating) return;
+      rotTimer = setTimeout(function () {
+        advance(state);
+        apply();
+      }, VIEWS[state.viewIndex].ms);
+    }
+
+    /* one timer re-armed, never stacked */
+    function armWindow(ms) {
+      if (winTimer) { clearTimeout(winTimer); winTimer = null; }
+      winTimer = setTimeout(function () { apply(); }, ms + 500);
+    }
+
+    function touched(viewId) {
+      var now = new Date();
+      if (viewId && viewId !== currentView(state)) {
+        while (currentView(state) !== viewId) advance(state);
+        onTouch(state, now, sunriseIso());
+      } else {
+        onTouch(state, now, sunriseIso());
+      }
+      armWindow(isDark(now, sunriseIso()) ? WAKE_MS : PAUSE_MS);
+      apply();
     }
 
     function fail(reason) {
@@ -410,51 +489,57 @@ if (typeof document !== "undefined") {
       x.open("GET", API + "&_=" + new Date().getTime(), true);
       x.timeout = 15000;
       x.onload = function () {
-        if (x.status !== 200) {
-          fail("Serwer pogodowy odpowiedzia\u0142 b\u0142\u0119dem " + x.status + ".");
-          return;
-        }
+        if (x.status !== 200) { fail("Serwer pogodowy odpowiedzia\u0142 b\u0142\u0119dem " + x.status + "."); return; }
         var parsed;
-        try {
-          parsed = JSON.parse(x.responseText);
-        } catch (e) {
-          fail("Odpowied\u017a serwera by\u0142a nieczytelna.");
-          return;
-        }
+        try { parsed = JSON.parse(x.responseText); }
+        catch (e) { fail("Odpowied\u017a serwera by\u0142a nieczytelna."); return; }
         if (!parsed || !parsed.daily || !parsed.current) {
-          fail("Odpowied\u017a serwera by\u0142a niekompletna.");
-          return;
+          fail("Odpowied\u017a serwera by\u0142a niekompletna."); return;
         }
         cache = parsed;
         el("stamp").innerHTML = "aktualizacja " + localIso().slice(11, 16);
-        paint();
+        apply();
       };
       x.onerror = function () { fail("Sprawd\u017a Wi-Fi."); };
       x.ontimeout = function () { fail("Serwer nie odpowiedzia\u0142 na czas."); };
       x.send();
     }
 
-    el("range").onchange = paint;
-    load();
+    el("range").onchange = function () { touched(null); };
+
+    document.getElementById("app").onclick = function (e) {
+      var t = e.target;
+      var id = t && t.getAttribute ? t.getAttribute("data-view") : null;
+      touched(id);
+    };
+    document.getElementById("night").onclick = function () { touched(null); };
+
+    /* re-evaluate at 00:30 and at dawn without a busy loop */
+    setInterval(function () { apply(); }, 60000);
+
     setInterval(load, 900000);
 
     setTimeout(function () {
       var base = location.href.split("?")[0].split("#")[0];
       location.replace(base + "?v=" + new Date().getTime());
     }, msUntil4am(new Date()));
+
+    apply();
+    load();
   })();
 }
 
 if (typeof module !== "undefined") {
   module.exports = {
-    wmo: wmo,
-    buildDaily: buildDaily,
-    buildHourly: buildHourly,
-    emptyHourlyMessage: emptyHourlyMessage,
+    wmo: wmo, buildDaily: buildDaily,
+    buildToday: buildToday, buildTomorrow: buildTomorrow, hourCell: hourCell,
     msUntil4am: msUntil4am,
-    cellHtml: cellHtml,
-    nowHtml: nowHtml,
-    dayLabel: dayLabel
+    cellHtml: cellHtml, nowHtml: nowHtml, dayLabel: dayLabel,
+    VIEWS: VIEWS, PAUSE_MS: PAUSE_MS, WAKE_MS: WAKE_MS,
+    createState: createState, currentView: currentView, advance: advance,
+    decide: decide, onTouch: onTouch, onManualSwitch: onManualSwitch,
+    isDark: isDark, dawnTime: dawnTime, dawnToday: dawnToday, dimStart: dimStart,
+    tabsHtml: tabsHtml
   };
 }
 </script>
