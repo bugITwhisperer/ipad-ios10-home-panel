@@ -1,5 +1,5 @@
 /* Panel iPad — backend for Zakupy/ToDo (Google Apps Script, bound to the Sheet).
-   Source of truth lives in the repo (gscript/Code.gs); paste it into the
+   Source of truth lives in the repo (apps-script/Code.gs); paste it into the
    Apps Script editor as the whole of Code.gs.
 
    Setup, once:

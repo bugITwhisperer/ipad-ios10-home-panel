@@ -35,7 +35,7 @@ function fakeDeps(sheets) {
   };
 }
 
-/* ======================= A. Apps Script (gscript/Code.gs) ======================= */
+/* ======================= A. Apps Script (apps-script/Code.gs) ======================= */
 
 test("A1 both lists come back in sheet order", function () {
   var g = h.loadGScript();
@@ -207,6 +207,16 @@ test("B8c spaces and line breaks inside a pasted URL are removed, not rejected",
   assert.equal(p.getSavedUrl(s), GOOD_URL, "stored without any spaces");
 });
 
+test("B8d setup has a 'Wyczyść' button that empties the field (no dead 'Anuluj')", function () {
+  var html = h.readRepoFile("index.html");
+  var setup = html.match(/<div id="setup"[\s\S]*?<div id="lista">/)[0];
+  assert.match(setup, /data-act="clear"[^>]*>Wyczy(ś|&#347;)(ć|&#263;)</, "button labelled Wyczyść");
+  assert.doesNotMatch(setup, /Anuluj|data-act="cancel"/, "old button gone");
+  var js = html.match(/function act\(name\) \{[\s\S]*?\n    \}\n/)[0];
+  assert.match(js, /name === "clear"[\s\S]*el\("setup-url"\)\.value = ""/, "clear empties the input");
+  assert.match(js, /name === "clear"[\s\S]*el\("setup-err"\)\.innerHTML = ""/, "and the error text");
+});
+
 test("B9 saved URL -> panel, setup skipped", function () {
   var p = h.loadPanel();
   var s = memStorage();
@@ -308,7 +318,7 @@ test("B17 item text is shown as text, never as HTML", function () {
 
 test("B18 repo guard: no Web App URL or key in committed code", function () {
   var html = h.readRepoFile("index.html");
-  var gs = h.readRepoFile("gscript/Code.gs");
+  var gs = h.readRepoFile("apps-script/Code.gs");
   [html, gs].forEach(function (src) {
     assert.doesNotMatch(src, /macros\/s\/AK[\w-]{10,}/, "deployment URL found");
     assert.doesNotMatch(src, /[?&]key=[A-Za-z0-9]{6,}/, "key found");

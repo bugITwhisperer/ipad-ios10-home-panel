@@ -1,7 +1,7 @@
 /* Loads code under test without a browser or Google.
    - index.html: runs its <script> in a sandbox (no `document`, so the
      wiring block is skipped) and returns module.exports.
-   - gscript/Code.gs: runs it in a sandbox and returns module.exports. */
+   - apps-script/Code.gs: runs it in a sandbox and returns module.exports. */
 "use strict";
 var fs = require("fs");
 var path = require("path");
@@ -24,8 +24,8 @@ function loadPanel() {
 }
 
 function loadGScript() {
-  var file = path.join(ROOT, "gscript", "Code.gs");
-  if (!fs.existsSync(file)) throw new Error("gscript/Code.gs does not exist yet");
+  var file = path.join(ROOT, "apps-script", "Code.gs");
+  if (!fs.existsSync(file)) throw new Error("apps-script/Code.gs does not exist yet");
   return runInSandbox(fs.readFileSync(file, "utf8"), "Code.gs");
 }
 

@@ -225,7 +225,7 @@ body.light #theme { background-color: #c8ced6; border-top-color: #b0b9c4; }
     <div id="setup" class="off">
       <p class="msg"><b>Pod&#322;&#261;cz arkusz Zakupy/ToDo</b>Wklej adres skryptu razem z kluczem:<br>https://script.google.com/macros/s/&hellip;/exec?key=&hellip;</p>
       <input id="setup-url" type="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-      <div class="btn" data-act="save">Zapisz</div><div class="btn" data-act="cancel">Anuluj</div>
+      <div class="btn" data-act="save">Zapisz</div><div class="btn" data-act="clear">Wyczy&#347;&#263;</div>
       <p class="list-note" id="setup-err"></p>
     </div>
     <div id="lista"></div>
@@ -265,7 +265,7 @@ var WAKE_MS  = 30000;    /* touch at night lights the screen */
 var DIM_MIN  = 30;       /* screen goes dark at 00:30 */
 var DAWN_LEAD_MS = 300000; /* lights up 5 min before sunrise */
 
-var STORAGE_KEY = "gscriptUrl";   /* Web App URL + key, kept only on the device */
+var STORAGE_KEY = "gscriptUrl";   /* Web App URL + key, kept only on the device. Do not rename: iPads already set up read it */
 var JSONP_TIMEOUT_MS = 15000;
 var LIST_MAX_ROWS = 7;            /* per column before "+N wiecej" */
 var LISTS = [
@@ -840,7 +840,7 @@ if (typeof document !== "undefined") {
 
     function act(name) {
       if (name === "setup") { showSetup = true; }
-      if (name === "cancel") { showSetup = false; el("setup-err").innerHTML = ""; }
+      if (name === "clear") { el("setup-url").value = ""; el("setup-err").innerHTML = ""; }
       if (name === "save") {
         var v = el("setup-url").value;
         if (!isValidExecUrl(v)) {
@@ -889,6 +889,7 @@ if (typeof document !== "undefined") {
       if (d.view === "pogoda") paintWeather();
       var prevView = lastView;
       lastView = d.view;
+      if (prevView === "lista" && d.view !== "lista") showSetup = false;
       if (d.view === "lista") {
         collapseIfIdle(ls, state, new Date());
         if (needsFetch(prevView, d.view)) fetchList(); else paintList();

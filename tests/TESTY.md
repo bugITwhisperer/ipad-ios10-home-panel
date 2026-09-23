@@ -25,7 +25,7 @@ bezpośrednio.
 | Plik                    | Rola                                                        |
 | ----------------------- | ----------------------------------------------------------- |
 | `../index.html`         | źródło panelu — cała logika w bloku `<script>`              |
-| `../gscript/Code.gs`    | backend Apps Script (etap C) — wklejany do edytora Google   |
+| `../apps-script/Code.gs`| backend Apps Script (etap C) — wklejany do edytora Google   |
 | `test-panel.js`         | testy panelu: rotacja, noc, pogoda, motyw                   |
 | `fixtures.js`           | generator sztucznych odpowiedzi Open-Meteo                  |
 | `test-todo-shopping-list.js`     | testy etapu C: skrypt Google + widok Zakupy/ToDo + JSONP    |
