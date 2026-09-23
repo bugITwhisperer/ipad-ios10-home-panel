@@ -129,7 +129,7 @@ Strefa czasowa arkusza: `Plik → Ustawienia → (GMT+01:00) Warsaw`
 4. przy każdej zmianie kodu skryptu: `Deploy → Manage deployments → ✏️ → Version: New version`
 5. na iPadzie, w zakładce Zakupy/ToDo: wkleić `https://script.google.com/macros/s/…/exec?key=KLUCZ` → `Zapisz`
 
-> 🔐 Klucz **nie trafia do repo** - repo jest publiczne. Zapisuje się tylko w pamięci przeglądarki na iPadzie.<br>
+> 🔐 Klucz zapisywany jest w pamięci przeglądarki na iPadzie.<br>
 > Link „zmień adres” pod listą pozwala go podmienić. Gdy adres wycieknie: ponownie `generateKey` + nowa wersja wdrożenia
 
 [`health-check/list.html`](https://bugitwhisperer.github.io/ipad-ios10-home-panel/health-check/list.html) - health check: czy iPad łączy się ze skryptem Google (adres bez klucza wystarczy, odpowiedź `auth` też oznacza, że połączenie działa)
