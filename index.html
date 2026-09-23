@@ -100,6 +100,42 @@ select.off { display: none; }
 .msg { margin-top: 30px; font-size: 22px; font-weight: 300; line-height: 1.5; color: #8fa3b8; }
 .msg b { display: block; font-weight: 400; color: #e8eef6; margin-bottom: 6px; }
 
+/* ---------- Zakupy/ToDo ---------- */
+.cols { display: -webkit-box; display: flex; margin-top: 16px; }
+.col { -webkit-box-flex: 1; flex: 1 1 0; min-width: 0; margin-right: 22px; }
+.col:last-child { margin-right: 0; }
+.col.expanded { max-height: 540px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.col-head {
+  font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #6f8299; margin: 0 0 10px 0;
+}
+.item {
+  font-size: 28px; font-weight: 300; color: #e8eef6;
+  padding: 12px 14px; margin-bottom: 8px;
+  background-color: #17202c; border-radius: 9px; border-left: 3px solid #2b3a4d;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.item.done { color: #56687d; text-decoration: line-through; border-left-color: #ffc46b; }
+.col.expanded .item { white-space: normal; }
+.more { font-size: 21px; color: #ffc46b; padding: 10px 14px; }
+.empty { font-size: 22px; color: #56687d; margin: 6px 0; }
+.list-note { font-size: 17px; color: #ffc46b; margin: 10px 0 0 0; }
+.list-foot { margin-top: 14px; font-size: 15px; }
+.link { color: #56687d; text-decoration: underline; }
+#setup.off { display: none; }
+#setup input {
+  box-sizing: border-box; width: 100%;
+  font-family: inherit; font-size: 18px; color: #e8eef6;
+  background-color: #1a2330; border: 1px solid #2b3a4d; border-radius: 6px;
+  padding: 10px; margin: 14px 0 12px 0;
+  -webkit-user-select: text; user-select: text;
+}
+.btn {
+  display: inline-block; font-size: 20px; color: #e8eef6;
+  padding: 10px 22px; margin-right: 10px;
+  background-color: #1d2735; border-radius: 7px; border-top: 2px solid #ffc46b;
+}
+
 /* ---------- light theme: grey, easier on an old LCD than white ---------- */
 body.light { background-color: #d9dde2; color: #23303f; }
 body.light .place { color: #5a6b7e; }
@@ -125,6 +161,15 @@ body.light .msg b { color: #23303f; }
 body.light #mini { color: #3d4d5e; }
 body.light #mini b { color: #b8720f; }
 body.light #mini u { color: #6b7a8a; }
+body.light .col-head { color: #6b7a8a; }
+body.light .item { background-color: #eceef1; color: #23303f; border-left-color: #b0b9c4; }
+body.light .item.done { color: #8a96a3; border-left-color: #b8720f; }
+body.light .more { color: #b8720f; }
+body.light .empty { color: #7d8b9a; }
+body.light .list-note { color: #9a5a00; }
+body.light .link { color: #6b7a8a; }
+body.light #setup input { background-color: #eceef1; color: #23303f; border-color: #aab3bf; }
+body.light .btn { background-color: #c8ced6; color: #23303f; border-top-color: #b8720f; }
 body.light #theme { background-color: #c8ced6; border-top-color: #b0b9c4; }
 
 /* ---------- theme toggle ---------- */
@@ -175,7 +220,13 @@ body.light #theme { background-color: #c8ced6; border-top-color: #b0b9c4; }
   </div>
 
   <div class="view" id="view-lista">
-    <p class="stub"><b>Zakupy / ToDo</b>Etap C &mdash; pozycje z arkusza, odhaczane palcem.</p>
+    <div id="setup" class="off">
+      <p class="msg"><b>Pod&#322;&#261;cz arkusz Zakupy/ToDo</b>Wklej adres skryptu razem z kluczem:<br>https://script.google.com/macros/s/&hellip;/exec?key=&hellip;</p>
+      <input id="setup-url" type="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div class="btn" data-act="save">Zapisz</div><div class="btn" data-act="cancel">Anuluj</div>
+      <p class="list-note" id="setup-err"></p>
+    </div>
+    <div id="lista"></div>
   </div>
 
   <div class="view" id="view-kalendarz">
@@ -211,6 +262,14 @@ var PAUSE_MS = 300000;   /* touch in daytime holds the view */
 var WAKE_MS  = 30000;    /* touch at night lights the screen */
 var DIM_MIN  = 30;       /* screen goes dark at 00:30 */
 var DAWN_LEAD_MS = 300000; /* lights up 5 min before sunrise */
+
+var STORAGE_KEY = "gscriptUrl";   /* Web App URL + key, kept only on the device */
+var JSONP_TIMEOUT_MS = 15000;
+var LIST_MAX_ROWS = 7;            /* per column before "+N wiecej" */
+var LISTS = [
+  { id: "zakupy", label: "Zakupy" },
+  { id: "todo",   label: "ToDo" }
+];
 
 /* ---------- weather logic (unchanged from v1) ---------- */
 
@@ -481,6 +540,181 @@ function tabsHtml(activeId) {
   return s;
 }
 
+/* ---------- Zakupy/ToDo: setup ---------- */
+
+function trim(s) {
+  return String(s === null || s === undefined ? "" : s).replace(/^\s+|\s+$/g, "");
+}
+
+/* only the real deployment URL, with its key, and nothing after it */
+function isValidExecUrl(s) {
+  return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?key=[A-Za-z0-9_-]+$/.test(trim(s));
+}
+
+function getSavedUrl(storage) {
+  try {
+    var v = storage.getItem(STORAGE_KEY);
+    return v ? v : null;
+  } catch (e) { return null; }
+}
+
+function saveUrl(storage, url) {
+  try { storage.setItem(STORAGE_KEY, trim(url)); return true; }
+  catch (e) { return false; }
+}
+
+function initialScreen(storage) {
+  var v;
+  try { v = storage.getItem(STORAGE_KEY); }
+  catch (e) { return "storage-error"; }
+  return v && isValidExecUrl(v) ? "panel" : "setup";
+}
+
+/* ---------- Zakupy/ToDo: list state ---------- */
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function createListState() {
+  return { data: null, offline: false, error: "", message: "",
+           pending: {}, expanded: { zakupy: false, todo: false } };
+}
+
+/* fetch only on the way INTO the list view, never on the minute refresh */
+function needsFetch(prevView, newView) {
+  return newView === "lista" && prevView !== "lista";
+}
+
+function onFetchResult(ls, res) {
+  if (res && res.ok === true) {
+    ls.data = { zakupy: res.zakupy || [], todo: res.todo || [] };
+    ls.offline = false;
+    ls.error = "";
+  } else if (res && res.ok === false) {
+    ls.error = res.error || "server";
+    ls.offline = false;
+  } else {
+    ls.offline = true;               /* timeout / network: keep the last list */
+  }
+  return ls;
+}
+
+function findItem(ls, list, row) {
+  var items = ls.data && ls.data[list], i;
+  if (!items) return null;
+  for (i = 0; i < items.length; i++) if (items[i].row === row) return items[i];
+  return null;
+}
+
+/* optimistic: flip at once, one request per item at a time */
+function tickStart(ls, list, row) {
+  var key = list + ":" + row;
+  var it = findItem(ls, list, row);
+  if (!it || ls.pending[key]) return { ls: ls, request: null };
+  it.done = !it.done;
+  ls.pending[key] = true;
+  ls.message = "";
+  return { ls: ls, request: { tick: list, row: row, done: it.done ? "1" : "0" } };
+}
+
+function tickResult(ls, list, row, ok) {
+  delete ls.pending[list + ":" + row];
+  if (!ok) {
+    var it = findItem(ls, list, row);
+    if (it) it.done = !it.done;
+    ls.message = "Nie uda\u0142o si\u0119 zapisa\u0107 \u2014 spr\u00f3buj jeszcze raz.";
+  }
+  return ls;
+}
+
+function expandList(ls, list) { ls.expanded[list] = true; return ls; }
+
+/* folds back together with the rotation resuming */
+function collapseIfIdle(ls, state, now) {
+  var i;
+  if (now.getTime() < state.pausedUntil) return ls;
+  for (i = 0; i < LISTS.length; i++) ls.expanded[LISTS[i].id] = false;
+  return ls;
+}
+
+function listsHtml(ls, maxRows) {
+  var s = "", i, j;
+  if (ls.error === "auth") {
+    s += '<p class="msg"><b>Z\u0142y klucz</b>Skrypt odrzuci\u0142 klucz. Sprawd\u017a adres w ustawieniach.</p>';
+  } else if (ls.error) {
+    s += '<p class="list-note">B\u0142\u0105d skryptu: ' + escapeHtml(ls.error) + "</p>";
+  }
+  if (ls.message) s += '<p class="list-note">' + escapeHtml(ls.message) + "</p>";
+  if (ls.offline) s += '<p class="list-note">offline \u2014 pokazuj\u0119 ostatni\u0105 list\u0119</p>';
+  if (!ls.data) {
+    if (!ls.error) {
+      s += ls.offline
+        ? '<p class="msg"><b>Brak po\u0142\u0105czenia</b>Lista pobierze si\u0119 przy kolejnym wej\u015bciu.</p>'
+        : '<p class="msg">Wczytywanie\u2026</p>';
+    }
+    return s;
+  }
+  s += '<div class="cols">';
+  for (i = 0; i < LISTS.length; i++) {
+    var id = LISTS[i].id;
+    var items = ls.data[id] || [];
+    var exp = ls.expanded[id];
+    var n = exp ? items.length : Math.min(items.length, maxRows);
+    s += '<div class="col' + (exp ? " expanded" : "") + '">';
+    s += '<p class="col-head">' + LISTS[i].label + "</p>";
+    if (items.length === 0) s += '<p class="empty">Pusto</p>';
+    for (j = 0; j < n; j++) {
+      s += '<div class="item' + (items[j].done ? " done" : "") + '" data-list="' + id +
+           '" data-row="' + escapeHtml(items[j].row) + '">' + escapeHtml(items[j].text) + "</div>";
+    }
+    if (!exp && items.length > maxRows) {
+      s += '<div class="more" data-list="' + id + '">+' + (items.length - maxRows) +
+           " wi\u0119cej</div>";
+    }
+    s += "</div>";
+  }
+  return s + "</div>";
+}
+
+/* ---------- Zakupy/ToDo: JSONP transport ----------
+   iOS 10 Safari cannot read Apps Script over XHR (CORS), so the answer comes
+   back as a script. env = { document, window, setTimeout, clearTimeout }.
+   The script tag is removed and the timeout cleared on every outcome. */
+
+var jsonpSeq = 0;
+
+function buildJsonpUrl(base, params, cbName) {
+  var s = trim(base), k;
+  for (k in params) {
+    if (Object.prototype.hasOwnProperty.call(params, k)) {
+      s += "&" + encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+    }
+  }
+  return s + "&callback=" + cbName;
+}
+
+function jsonpRequest(env, base, params, onDone) {
+  jsonpSeq++;
+  var name = "__gs" + jsonpSeq + "_" + new Date().getTime();
+  var finished = false, timer = null;
+  var tag = env.document.createElement("script");
+  function finish(res) {
+    if (finished) return;
+    finished = true;
+    if (timer !== null) env.clearTimeout(timer);
+    env.window[name] = function () {};   /* a late answer lands here harmlessly */
+    if (tag.parentNode) tag.parentNode.removeChild(tag);
+    onDone(res);
+  }
+  env.window[name] = function (data) { finish(data); };
+  tag.onerror = function () { finish({ error: "network" }); };
+  timer = env.setTimeout(function () { finish({ error: "timeout" }); }, JSONP_TIMEOUT_MS);
+  tag.src = buildJsonpUrl(base, params, name);
+  env.document.body.appendChild(tag);
+}
+
 /* ---------- wiring ---------- */
 
 if (typeof document !== "undefined") {
@@ -492,6 +726,15 @@ if (typeof document !== "undefined") {
     var theme = readTheme(store);
     var rotTimer = null;   /* exactly one rotation timer ever exists */
     var winTimer = null;   /* exactly one pause/wake timer ever exists */
+    var ls = createListState();
+    var lastView = null;
+    var listBusy = false;
+    var showSetup = false;
+    var env = {
+      document: document, window: window,
+      setTimeout: function (f, ms) { return setTimeout(f, ms); },
+      clearTimeout: function (id) { clearTimeout(id); }
+    };
 
     function el(id) { return document.getElementById(id); }
 
@@ -542,6 +785,81 @@ if (typeof document !== "undefined") {
       el("strip-next").innerHTML = renderCells(lower);
     }
 
+    function screenNow() { return store ? initialScreen(store) : "storage-error"; }
+
+    function savedUrl() {
+      var u = store ? getSavedUrl(store) : null;
+      return u && isValidExecUrl(u) ? trim(u) : null;
+    }
+
+    function paintList() {
+      var scr = screenNow();
+      if (scr === "storage-error") {
+        el("setup").className = "off";
+        el("lista").innerHTML = '<p class="msg"><b>Pami\u0119\u0107 przegl\u0105darki niedost\u0119pna</b>' +
+          "Wy\u0142\u0105cz tryb prywatny w Safari.</p>";
+        return;
+      }
+      var setup = scr === "setup" || showSetup;
+      el("setup").className = setup ? "" : "off";
+      el("lista").innerHTML = setup ? "" : listsHtml(ls, LIST_MAX_ROWS) +
+        '<p class="list-foot"><span class="link" data-act="setup">zmie\u0144 adres</span></p>';
+    }
+
+    function fetchList() {
+      var url = savedUrl();
+      if (!url || listBusy) { paintList(); return; }
+      listBusy = true;
+      jsonpRequest(env, url, {}, function (res) {
+        listBusy = false;
+        onFetchResult(ls, res);
+        paintList();
+      });
+    }
+
+    function tick(list, row) {
+      var url = savedUrl();
+      if (!url) return;
+      var r = tickStart(ls, list, row);
+      paintList();
+      if (!r.request) return;
+      jsonpRequest(env, url, r.request, function (res) {
+        tickResult(ls, list, row, !!(res && res.ok === true));
+        paintList();
+      });
+    }
+
+    function act(name) {
+      if (name === "setup") { showSetup = true; }
+      if (name === "cancel") { showSetup = false; el("setup-err").innerHTML = ""; }
+      if (name === "save") {
+        var v = el("setup-url").value;
+        if (!isValidExecUrl(v)) {
+          el("setup-err").innerHTML = "To nie jest adres \u2026/exec?key=\u2026 &mdash; sprawd\u017a, czy skopiowa\u0142a\u015b ca\u0142o\u015b\u0107.";
+          return;
+        }
+        if (!saveUrl(store, v)) {
+          el("setup-err").innerHTML = "Nie da si\u0119 zapisa\u0107 &mdash; wy\u0142\u0105cz tryb prywatny w Safari.";
+          return;
+        }
+        el("setup-url").value = "";
+        el("setup-err").innerHTML = "";
+        showSetup = false;
+        ls = createListState();
+        fetchList();
+      }
+      paintList();
+    }
+
+    /* nearest element (itself or a parent) carrying the attribute */
+    function withAttr(t, name) {
+      while (t && t.getAttribute) {
+        if (t.getAttribute(name) !== null) return t;
+        t = t.parentNode;
+      }
+      return null;
+    }
+
     /* every render replaces innerHTML; nothing is ever appended */
     function apply() {
       var d = decide(state, new Date(), sunriseIso());
@@ -560,6 +878,12 @@ if (typeof document !== "undefined") {
       el("theme").innerHTML = themeIcon(theme);
       el("night").className = d.dark ? "on" : "";
       if (d.view === "pogoda") paintWeather();
+      var prevView = lastView;
+      lastView = d.view;
+      if (d.view === "lista") {
+        collapseIfIdle(ls, state, new Date());
+        if (needsFetch(prevView, d.view)) fetchList(); else paintList();
+      }
       schedule(d);
     }
 
@@ -632,6 +956,16 @@ if (typeof document !== "undefined") {
     document.getElementById("app").onclick = function (e) {
       var t = e.target;
       if (t && t.id === "theme") return;
+      var a = withAttr(t, "data-act");
+      var item = withAttr(t, "data-row");
+      var more = withAttr(t, "data-list");
+      if (a) { touched(null); act(a.getAttribute("data-act")); return; }
+      if (item) {
+        touched(null);
+        tick(item.getAttribute("data-list"), Number(item.getAttribute("data-row")));
+        return;
+      }
+      if (more) { expandList(ls, more.getAttribute("data-list")); touched(null); return; }
       var id = t && t.getAttribute ? t.getAttribute("data-view") : null;
       touched(id);
     };
@@ -664,7 +998,14 @@ if (typeof module !== "undefined") {
     themeIcon: themeIcon, nextTheme: nextTheme, readTheme: readTheme,
     saveTheme: saveTheme, bodyClass: bodyClass, THEMES: THEMES,
     isDark: isDark, dawnTime: dawnTime, dawnToday: dawnToday, dimStart: dimStart,
-    tabsHtml: tabsHtml, miniNowHtml: miniNowHtml
+    tabsHtml: tabsHtml, miniNowHtml: miniNowHtml,
+    STORAGE_KEY: STORAGE_KEY, JSONP_TIMEOUT_MS: JSONP_TIMEOUT_MS, LISTS: LISTS,
+    isValidExecUrl: isValidExecUrl, getSavedUrl: getSavedUrl, saveUrl: saveUrl,
+    initialScreen: initialScreen, escapeHtml: escapeHtml,
+    createListState: createListState, needsFetch: needsFetch,
+    onFetchResult: onFetchResult, tickStart: tickStart, tickResult: tickResult,
+    expandList: expandList, collapseIfIdle: collapseIfIdle, listsHtml: listsHtml,
+    buildJsonpUrl: buildJsonpUrl, jsonpRequest: jsonpRequest
   };
 }
 </script>

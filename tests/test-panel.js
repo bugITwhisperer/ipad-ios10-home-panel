@@ -1,20 +1,32 @@
+/* Run from the repo root:  node tests/test-panel.js
+   Reads the page straight from ../index.html - no generated files needed. */
+process.env.TZ = "Europe/Warsaw";   /* night mode and DST tests assume Polish time */
 var fs = require("fs");
-var app = require("./panel-app.js");
+var path = require("path");
+var Module = require("module");
+
+var HTML = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+var SRC = HTML.match(/<script>([\s\S]*?)<\/script>/)[1];
+var app = (function () {
+  var m = new Module(path.join(__dirname, "panel-app.js"));
+  m._compile(SRC, "panel-app.js");
+  return m.exports;
+})();
 var fx = require("./fixtures.js");
 
-var pass = 0, fail = 0;
+var pass = 0, fail = 0, todo = 0;
 function t(id, name, fn) {
   try { fn(); pass++; console.log("  PASS  " + id + "  " + name); }
   catch (e) { fail++; console.log("  FAIL  " + id + "  " + name + "\n        -> " + e.message); }
 }
+/* test for a feature not built yet: listed, not run, does not fail the suite */
+function todoT(id, name, fn) { todo++; console.log("  TODO  " + id + "  " + name); }
 function eq(a, b, what) {
   if (String(a) !== String(b))
     throw new Error((what || "") + " expected <" + b + "> got <" + a + ">");
 }
 function ok(c, what) { if (!c) throw new Error(what || "expected truthy"); }
 
-var SRC = fs.readFileSync("panel-app.js", "utf8");
-var HTML = fs.readFileSync("panel.html", "utf8");
 
 /* sunrise fixtures — the code must read these, never hardcode a time */
 var SUN_SUMMER = "2026-06-21T04:10";
@@ -54,8 +66,12 @@ t(26, "po pelnej petli wraca do pogody, nie zatrzymuje sie", function () {
 
 t(27, "przelaczenie widoku nie zostawia osieroconych wezlow", function () {
   ok(/\.innerHTML = /.test(SRC), "render przez innerHTML");
-  ok(!/appendChild|insertBefore|createElement/.test(SRC),
-     "nic nie jest dopisywane do DOM");
+  /* jedyny wyjatek: tag <script> transportu JSONP (etap C), sprzatany po kazdej odpowiedzi */
+  var jsonp = SRC.match(/function jsonpRequest[\s\S]*?\n\}\n/);
+  ok(jsonp, "jsonpRequest istnieje");
+  ok(/removeChild\(tag\)/.test(jsonp[0]), "JSONP usuwa swoj tag");
+  ok(!/appendChild|insertBefore|createElement/.test(SRC.replace(jsonp[0], "")),
+     "poza JSONP nic nie jest dopisywane do DOM");
   ok(/className = "view"/.test(SRC), "widoki chowane klasa, nie usuwane");
   // tabsHtml jest czysty: te same dane -> ten sam string, bez narastania
   var a = app.tabsHtml("pogoda"), b = app.tabsHtml("pogoda");
@@ -239,10 +255,11 @@ t(41, "brak narastajacych timerow - kazdy setTimeout ma swoj clear", function ()
   eq(intervals, 2, "dokladnie 2 setInterval: odswiezanie danych i zegar minutowy");
 });
 
-t(42, "zaslepki zakupow i kalendarza nie wywalaja rotacji", function () {
+t(42, "lista i zaslepka kalendarza nie wywalaja rotacji", function () {
   ok(/id="view-lista"/.test(HTML), "kontener zakupow istnieje");
   ok(/id="view-kalendarz"/.test(HTML), "kontener kalendarza istnieje");
-  ok(HTML.indexOf("Zakupy / ToDo") > -1, "etykieta zaslepki");
+  ok(/id="lista"/.test(HTML) && /id="setup"/.test(HTML), "widok listy: kontener i ekran konfiguracji");
+  ok(HTML.indexOf("<b>Kalendarz</b>") > -1, "zaslepka kalendarza (etap B) nadal jest");
   var s = app.createState(), i;
   var now = at(2026, 9, 23, 14, 0);
   for (i = 0; i < 9; i++) {
@@ -650,5 +667,5 @@ t("R2", "przeladowanie o 4:00 nietkniete", function () {
   ok(/location\.replace/.test(SRC), "pelne przeladowanie");
 });
 
-console.log("\n" + pass + " passed, " + fail + " failed\n");
+console.log("\n" + pass + " passed, " + fail + " failed, " + todo + " todo\n");
 process.exit(fail ? 1 : 0);

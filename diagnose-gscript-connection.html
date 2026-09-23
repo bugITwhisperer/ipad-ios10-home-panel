@@ -1,19 +1,27 @@
 <!DOCTYPE html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width"><title>Test 21</title>
+<meta name="viewport" content="width=device-width"><title>Diagnostyka połączenia z Google Script</title>
 <style>body{font:20px sans-serif;padding:20px}input{width:100%;font-size:18px}
 button{font-size:22px;margin:10px 0;padding:10px}pre{white-space:pre-wrap;background:#eee;padding:10px}</style>
 </head><body>
-<h1>Test 21</h1>
-<input id="u" placeholder="Wklej URL .../exec">
+<h1>Diagnostyka połączenia z Google Script</h1>
+<input id="u" placeholder="https://script.google.com/macros/s/.../exec">
 <button onclick="testXhr()">1. Test XHR</button>
 <button onclick="testJsonp()">2. Test JSONP</button>
 <pre id="out"></pre>
 <script>
+/* only our own Apps Script deployment may be contacted (optionally with ?key=) */
+var EXEC_RE = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(\?key=[A-Za-z0-9_-]+)?$/;
+var seq = 0;
 function log(m){ document.getElementById('out').textContent += m + '\n'; }
-function url(){ return document.getElementById('u').value.replace(/^\s+|\s+$/g, ''); }
+function url(){
+  var v = document.getElementById('u').value.replace(/^\s+|\s+$/g, '');
+  if (!EXEC_RE.test(v)) { log('ZLY ADRES: wklej https://script.google.com/macros/s/.../exec'); return null; }
+  return v;
+}
 function testXhr(){
+  var u = url(); if (!u) return;
   var x = new XMLHttpRequest();
-  x.open('GET', url(), true);
+  x.open('GET', u, true);
   x.timeout = 15000;
   x.onload = function(){ log('XHR status ' + x.status + ': ' + x.responseText); };
   x.onerror = function(){ log('XHR BLAD (siec/CORS)'); };
@@ -21,10 +29,18 @@ function testXhr(){
   x.send();
 }
 function testJsonp(){
-  window.cbTest = function(d){ log('JSONP OK: ' + JSON.stringify(d)); };
-  var s = document.createElement('script');
-  s.src = url() + (url().indexOf('?') < 0 ? '?' : '&') + 'callback=cbTest';
-  s.onerror = function(){ log('JSONP BLAD'); };
+  var u = url(); if (!u) return;
+  var name = 'diag' + (++seq), done = false, s = document.createElement('script');
+  function end(msg){
+    if (done) return; done = true;
+    clearTimeout(t); window[name] = function(){};
+    if (s.parentNode) s.parentNode.removeChild(s);
+    log(msg);
+  }
+  var t = setTimeout(function(){ end('JSONP TIMEOUT'); }, 15000);
+  window[name] = function(d){ end('JSONP OK: ' + JSON.stringify(d)); };
+  s.onerror = function(){ end('JSONP BLAD'); };
+  s.src = u + (u.indexOf('?') < 0 ? '?' : '&') + 'callback=' + name;
   document.body.appendChild(s);
 }
 </script></body></html>
