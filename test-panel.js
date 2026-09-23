@@ -495,6 +495,135 @@ t(57, "pelna petla przelacza mini/dropdown za kazdym razem", function () {
   ok(flips > 0, "naglowek faktycznie sie przelacza");
 });
 
+
+console.log("\nGRUPA 12 - motyw ciemny/jasny");
+
+function fakeStore(initial) {
+  var v = initial;
+  return {
+    getItem: function () { return v === undefined ? null : v; },
+    setItem: function (k, x) { v = x; },
+    read: function () { return v; }
+  };
+}
+
+t(58, "przelacznik zmienia motyw w obie strony", function () {
+  eq(app.nextTheme("dark"), "light");
+  eq(app.nextTheme("light"), "dark");
+  eq(app.nextTheme(app.nextTheme("dark")), "dark", "dwa klikniecia wracaja");
+  eq(app.THEMES.length, 2, "dokladnie dwa motywy");
+});
+
+t(59, "ikona pokazuje motyw docelowy, nie biezacy", function () {
+  eq(app.themeIcon("dark"), "\u2600\uFE0F", "w ciemnym widac slonce");
+  eq(app.themeIcon("light"), "\uD83C\uDF19", "w jasnym widac ksiezyc");
+  ok(app.themeIcon("dark") !== app.themeIcon("light"), "ikony sie roznia");
+});
+
+t(60, "wybor zapisywany i odczytywany przy starcie", function () {
+  var st = fakeStore();
+  eq(app.saveTheme(st, "light"), true, "zapis sie udal");
+  eq(st.read(), "light", "trafilo do magazynu");
+  eq(app.readTheme(st), "light", "odczyt zwraca zapisane");
+  app.saveTheme(st, "dark");
+  eq(app.readTheme(st), "dark", "nadpisanie dziala");
+  ok(/panel-theme/.test(SRC), "klucz nazwany jednoznacznie");
+});
+
+t(61, "brak zapisu -> domyslnie ciemny", function () {
+  eq(app.readTheme(fakeStore()), "dark", "pusty magazyn");
+  eq(app.readTheme(null), "dark", "brak localStorage w ogole");
+});
+
+t(62, "uszkodzona wartosc -> ciemny, bez wywrotki", function () {
+  eq(app.readTheme(fakeStore("blue")), "dark", "nieznana nazwa");
+  eq(app.readTheme(fakeStore("")), "dark", "pusty string");
+  eq(app.readTheme(fakeStore("{}")), "dark", "smieci");
+  var boom = { getItem: function () { throw new Error("denied"); } };
+  eq(app.readTheme(boom), "dark", "wyjatek z localStorage nie wywala strony");
+  var boomSet = { setItem: function () { throw new Error("full"); } };
+  eq(app.saveTheme(boomSet, "light"), false, "nieudany zapis zwraca false");
+  eq(app.saveTheme(fakeStore(), "zielony"), false, "nieznany motyw nie jest zapisywany");
+});
+
+t(63, "tryb nocny gasi na czarno przy obu motywach", function () {
+  var s2 = app.createState(), night = at(2026, 9, 23, 2, 0);
+  ok(app.decide(s2, night, SUN_MID).dark, "noc trwa");
+  /* warstwa nocna jest osobna od motywu - klasa body sie nie zmienia */
+  eq(app.bodyClass("dark", true), "", "ciemny motyw w nocy");
+  eq(app.bodyClass("light", true), "light", "jasny motyw zostaje pod spodem");
+  ok(/#night \{[\s\S]{0,160}background-color: #000/.test(HTML),
+     "warstwa nocna zawsze czarna");
+  ok(!/body\.light #night/.test(HTML), "motyw nie zmienia koloru warstwy nocnej");
+});
+
+t(64, "dotkniecie w nocy pokazuje motyw wybrany wczesniej", function () {
+  var s2 = app.createState(), night = at(2026, 9, 23, 2, 0);
+  app.onTouch(s2, night, SUN_MID);
+  ok(!app.decide(s2, night, SUN_MID).dark, "ekran sie rozjasnil");
+  eq(app.bodyClass("light", false), "light", "wraca jasny, nie domyslny");
+  eq(app.bodyClass("dark", false), "", "ciemny zostaje ciemny");
+});
+
+t(65, "o swicie wraca ten sam motyw, nie domyslny", function () {
+  var st = fakeStore("light");
+  var theme = app.readTheme(st);
+  var s2 = app.createState();
+  var dawn = app.dawnTime(SUN_MID).getTime();
+  eq(app.bodyClass(theme, app.decide(s2, new Date(dawn - 60000), SUN_MID).dark),
+     "light", "przed switem motyw jasny pod spodem");
+  eq(app.bodyClass(theme, app.decide(s2, new Date(dawn + 60000), SUN_MID).dark),
+     "light", "po swicie nadal jasny");
+});
+
+t(66, "przelaczenie motywu w nocy zostaje zapamietane", function () {
+  var st = fakeStore("dark");
+  var theme = app.nextTheme(app.readTheme(st));
+  app.saveTheme(st, theme);
+  eq(st.read(), "light", "zapisane mimo nocy");
+  eq(app.readTheme(st), "light", "przetrwa restart");
+  ok(/theme = nextTheme\(theme\);\s*\n\s*saveTheme\(store, theme\);/.test(SRC),
+     "zapis nastepuje przy kazdym przelaczeniu");
+});
+
+t(67, "motyw przezywa przeladowanie o 4:00", function () {
+  var st = fakeStore("light");
+  /* przeladowanie = nowy start strony = ponowny odczyt z magazynu */
+  eq(app.readTheme(st), "light", "po restarcie ten sam motyw");
+  ok(/var theme = readTheme\(store\);/.test(SRC), "motyw czytany na starcie");
+  ok(/location\.replace/.test(SRC), "przeladowanie nadal obecne");
+});
+
+t(68, "oba motywy trzymaja kontrast", function () {
+  var css = HTML.match(/<style>([\s\S]*?)<\/style>/)[1];
+  /* jasny motyw jest szary, nie bialy - lagodniejszy na starym LCD */
+  var bg = css.match(/body\.light \{ background-color: (#[0-9a-f]{6}); color: (#[0-9a-f]{6}); \}/);
+  ok(bg, "jasny motyw ma zdefiniowane tlo i tekst");
+  ok(bg[1] !== "#ffffff" && bg[1] !== "#fff", "tlo szare, nie biale");
+  ok(bg[1] !== bg[2], "tlo i tekst to nie ten sam kolor");
+  function lum(h) {
+    return 0.299 * parseInt(h.slice(1, 3), 16) +
+           0.587 * parseInt(h.slice(3, 5), 16) +
+           0.114 * parseInt(h.slice(5, 7), 16);
+  }
+  ok(Math.abs(lum(bg[1]) - lum(bg[2])) > 100,
+     "wyrazna roznica jasnosci, got " + Math.round(Math.abs(lum(bg[1]) - lum(bg[2]))));
+  /* kazdy nadpisany element ma swoj odpowiednik w jasnym motywie */
+  var keys = ["\\.cell", "\\.c-temp", "\\.now-temp", "\\.tab", "#mini", "\\.strip-head"];
+  keys.forEach(function (k) {
+    ok(new RegExp("body\\.light " + k).test(css), "brak wariantu jasnego dla " + k);
+  });
+});
+
+t(69, "motyw nie wprowadza CSS-a spoza iOS 10", function () {
+  var css = HTML.match(/<style>([\s\S]*?)<\/style>/)[1];
+  if (/--[a-z-]+\s*:/.test(css)) throw new Error("CSS custom property");
+  if (/prefers-color-scheme/.test(css)) throw new Error("prefers-color-scheme (iOS 13+)");
+  if (/filter:\s*invert/.test(css)) throw new Error("filter: invert");
+  if (/\bcolor-mix\(|\blight-dark\(/.test(css)) throw new Error("modern color fn");
+  ok(/body\.light/.test(css), "motyw robiony klasa na body");
+});
+
 console.log("\nREGRESJA - etap poprzedni");
 
 t("R1", "logika pogody i prognozy dziennej", function () {

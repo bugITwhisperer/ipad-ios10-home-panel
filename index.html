@@ -35,6 +35,7 @@ html, body {
 
 /* ---------- view tabs ---------- */
 #tabs { display: -webkit-box; display: flex; }
+#topright { display: -webkit-box; display: flex; }
 .tab {
   font-size: 17px; color: #6f8299;
   padding: 8px 15px; margin-left: 7px;
@@ -99,6 +100,41 @@ select.off { display: none; }
 .msg { margin-top: 30px; font-size: 22px; font-weight: 300; line-height: 1.5; color: #8fa3b8; }
 .msg b { display: block; font-weight: 400; color: #e8eef6; margin-bottom: 6px; }
 
+/* ---------- light theme: grey, easier on an old LCD than white ---------- */
+body.light { background-color: #d9dde2; color: #23303f; }
+body.light .place { color: #5a6b7e; }
+body.light .stamp { color: #7d8b9a; }
+body.light .tab { background-color: #c8ced6; color: #5a6b7e; border-top-color: #b0b9c4; }
+body.light .tab.on { background-color: #eceef1; color: #23303f; border-top-color: #b8720f; }
+body.light select { background-color: #c8ced6; color: #23303f; border-color: #aab3bf; }
+body.light .now-temp { color: #b8720f; }
+body.light .now-text { color: #3d4d5e; }
+body.light .now-text span { color: #6b7a8a; }
+body.light .strip-head { color: #6b7a8a; }
+body.light .cell { background-color: #eceef1; border-top-color: #b0b9c4; }
+body.light .cell.edge { border-top-color: #b8720f; }
+body.light .c-when { color: #5a6b7e; }
+body.light .c-temp { color: #b8720f; }
+body.light .c-lo { color: #7d8b9a; }
+body.light .c-rain { color: #1c6ba8; }
+body.light .c-wind { color: #5a6b7e; }
+body.light .stub { color: #5a6b7e; }
+body.light .stub b { color: #23303f; }
+body.light .msg { color: #4a5a6b; }
+body.light .msg b { color: #23303f; }
+body.light #mini { color: #3d4d5e; }
+body.light #mini b { color: #b8720f; }
+body.light #mini u { color: #6b7a8a; }
+body.light #theme { background-color: #c8ced6; border-top-color: #b0b9c4; }
+
+/* ---------- theme toggle ---------- */
+#theme {
+  font-size: 21px; line-height: 1;
+  padding: 9px 13px; margin-left: 7px;
+  background-color: #17202c; border-radius: 7px;
+  border-top: 2px solid #2b3a4d;
+}
+
 /* ---------- night ---------- */
 #night {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -123,7 +159,10 @@ select.off { display: none; }
         <option value="7">7 dni</option>
       </select>
     </div>
-    <div id="tabs"></div>
+    <div id="topright">
+      <div id="tabs"></div>
+      <div id="theme"></div>
+    </div>
   </div>
 
   <div class="view" id="view-pogoda">
@@ -312,6 +351,40 @@ function isDark(now, sunriseIso) {
   return now.getTime() < dawn.getTime();
 }
 
+/* ---------- theme ---------- */
+
+var THEMES = ["dark", "light"];
+
+/* the icon shows what you will GET, not what you have */
+function themeIcon(theme) {
+  return theme === "light" ? "\uD83C\uDF19" : "\u2600\uFE0F";
+}
+
+function nextTheme(theme) {
+  return theme === "light" ? "dark" : "light";
+}
+
+/* anything unreadable or unrecognised falls back to dark */
+function readTheme(store) {
+  var raw;
+  try { raw = store ? store.getItem("panel-theme") : null; }
+  catch (e) { return "dark"; }
+  if (raw === "light" || raw === "dark") return raw;
+  return "dark";
+}
+
+function saveTheme(store, theme) {
+  if (theme !== "light" && theme !== "dark") return false;
+  try { store.setItem("panel-theme", theme); return true; }
+  catch (e) { return false; }
+}
+
+function bodyClass(theme, dark) {
+  /* night dims to black on top of whichever theme is set - it never
+     replaces it, so the same theme comes back at dawn */
+  return theme === "light" ? "light" : "";
+}
+
 /* ---------- state machine ---------- */
 
 function createState() {
@@ -414,6 +487,9 @@ if (typeof document !== "undefined") {
   (function () {
     var cache = null;
     var state = createState();
+    var store = null;
+    try { store = window.localStorage; } catch (e) { store = null; }
+    var theme = readTheme(store);
     var rotTimer = null;   /* exactly one rotation timer ever exists */
     var winTimer = null;   /* exactly one pause/wake timer ever exists */
 
@@ -480,6 +556,8 @@ if (typeof document !== "undefined") {
       el("range").className = onWeather ? "" : "off";
       el("mini").className = onWeather ? "" : "on";
       el("mini").innerHTML = onWeather ? "" : miniNowHtml(cache);
+      document.body.className = bodyClass(theme, d.dark);
+      el("theme").innerHTML = themeIcon(theme);
       el("night").className = d.dark ? "on" : "";
       if (d.view === "pogoda") paintWeather();
       schedule(d);
@@ -544,8 +622,16 @@ if (typeof document !== "undefined") {
 
     el("range").onchange = function () { touched(null); };
 
+    document.getElementById("theme").onclick = function (e) {
+      theme = nextTheme(theme);
+      saveTheme(store, theme);
+      touched(null);
+      if (e && e.stopPropagation) e.stopPropagation();
+    };
+
     document.getElementById("app").onclick = function (e) {
       var t = e.target;
+      if (t && t.id === "theme") return;
       var id = t && t.getAttribute ? t.getAttribute("data-view") : null;
       touched(id);
     };
@@ -575,6 +661,8 @@ if (typeof module !== "undefined") {
     VIEWS: VIEWS, PAUSE_MS: PAUSE_MS, WAKE_MS: WAKE_MS,
     createState: createState, currentView: currentView, advance: advance,
     decide: decide, onTouch: onTouch, onManualSwitch: onManualSwitch,
+    themeIcon: themeIcon, nextTheme: nextTheme, readTheme: readTheme,
+    saveTheme: saveTheme, bodyClass: bodyClass, THEMES: THEMES,
     isDark: isDark, dawnTime: dawnTime, dawnToday: dawnToday, dimStart: dimStart,
     tabsHtml: tabsHtml, miniNowHtml: miniNowHtml
   };
