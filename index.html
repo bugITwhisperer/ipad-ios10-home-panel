@@ -102,9 +102,12 @@ select.off { display: none; }
 
 /* ---------- Zakupy/ToDo ---------- */
 .cols { display: -webkit-box; display: flex; margin-top: 16px; }
-.col { -webkit-box-flex: 1; flex: 1 1 0; min-width: 0; margin-right: 22px; }
+/* width:0 + basis 0%: iOS 10 Safari ignores a bare 0 and lets long text widen the column */
+.col {
+  -webkit-box-flex: 1; flex: 1 1 0%; width: 0; min-width: 0; margin-right: 22px;
+  max-height: 560px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
 .col:last-child { margin-right: 0; }
-.col.expanded { max-height: 540px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .col-head {
   font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase;
   color: #6f8299; margin: 0 0 10px 0;
@@ -113,10 +116,9 @@ select.off { display: none; }
   font-size: 28px; font-weight: 300; color: #e8eef6;
   padding: 12px 14px; margin-bottom: 8px;
   background-color: #17202c; border-radius: 9px; border-left: 3px solid #2b3a4d;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  white-space: normal; word-wrap: break-word; line-height: 1.25;
 }
 .item.done { color: #56687d; text-decoration: line-through; border-left-color: #ffc46b; }
-.col.expanded .item { white-space: normal; }
 .more { font-size: 21px; color: #ffc46b; padding: 10px 14px; }
 .empty { font-size: 22px; color: #56687d; margin: 6px 0; }
 .list-note { font-size: 17px; color: #ffc46b; margin: 10px 0 0 0; }
@@ -546,9 +548,15 @@ function trim(s) {
   return String(s === null || s === undefined ? "" : s).replace(/^\s+|\s+$/g, "");
 }
 
+/* a URL never contains whitespace, so any space or line break picked up
+   while pasting (mail, notes) is simply dropped */
+function compactUrl(s) {
+  return String(s === null || s === undefined ? "" : s).replace(/\s+/g, "");
+}
+
 /* only the real deployment URL, with its key, and nothing after it */
 function isValidExecUrl(s) {
-  return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?key=[A-Za-z0-9_-]+$/.test(trim(s));
+  return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec\?key=[A-Za-z0-9_-]+$/.test(compactUrl(s));
 }
 
 function getSavedUrl(storage) {
@@ -559,7 +567,7 @@ function getSavedUrl(storage) {
 }
 
 function saveUrl(storage, url) {
-  try { storage.setItem(STORAGE_KEY, trim(url)); return true; }
+  try { storage.setItem(STORAGE_KEY, compactUrl(url)); return true; }
   catch (e) { return false; }
 }
 
@@ -726,6 +734,7 @@ if (typeof document !== "undefined") {
     var theme = readTheme(store);
     var rotTimer = null;   /* exactly one rotation timer ever exists */
     var winTimer = null;   /* exactly one pause/wake timer ever exists */
+    var retryTimer = null; /* at most one pending weather retry */
     var ls = createListState();
     var lastView = null;
     var listBusy = false;
@@ -789,7 +798,7 @@ if (typeof document !== "undefined") {
 
     function savedUrl() {
       var u = store ? getSavedUrl(store) : null;
-      return u && isValidExecUrl(u) ? trim(u) : null;
+      return u && isValidExecUrl(u) ? compactUrl(u) : null;
     }
 
     function paintList() {
@@ -914,13 +923,19 @@ if (typeof document !== "undefined") {
       apply();
     }
 
+    /* keeps the last good weather on screen if there is one; the retry never stacks */
     function fail(reason) {
-      el("stamp").innerHTML = "brak po\u0142\u0105czenia";
-      el("now").innerHTML = "";
-      el("strip").innerHTML = "";
-      el("msg").innerHTML = '<p class="msg"><b>Nie uda\u0142o si\u0119 pobra\u0107 pogody</b>' +
-        reason + " Kolejna pr\u00f3ba za minut\u0119.</p>";
-      setTimeout(load, 60000);
+      el("stamp").innerHTML = "brak po\u0142\u0105czenia" +
+        (cache ? " \u2014 dane z wcze\u015bniej" : "");
+      if (!cache) {
+        el("now").innerHTML = "";
+        el("strip-today").innerHTML = "";
+        el("strip-next").innerHTML = "";
+        el("msg-today").innerHTML = '<p class="msg"><b>Nie uda\u0142o si\u0119 pobra\u0107 pogody</b>' +
+          reason + " Kolejna pr\u00f3ba za minut\u0119.</p>";
+      }
+      if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+      retryTimer = setTimeout(load, 60000);
     }
 
     function load() {
@@ -936,6 +951,7 @@ if (typeof document !== "undefined") {
           fail("Odpowied\u017a serwera by\u0142a niekompletna."); return;
         }
         cache = parsed;
+        if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
         el("stamp").innerHTML = "aktualizacja " + localIso().slice(11, 16);
         apply();
       };
@@ -1000,7 +1016,7 @@ if (typeof module !== "undefined") {
     isDark: isDark, dawnTime: dawnTime, dawnToday: dawnToday, dimStart: dimStart,
     tabsHtml: tabsHtml, miniNowHtml: miniNowHtml,
     STORAGE_KEY: STORAGE_KEY, JSONP_TIMEOUT_MS: JSONP_TIMEOUT_MS, LISTS: LISTS,
-    isValidExecUrl: isValidExecUrl, getSavedUrl: getSavedUrl, saveUrl: saveUrl,
+    isValidExecUrl: isValidExecUrl, compactUrl: compactUrl, getSavedUrl: getSavedUrl, saveUrl: saveUrl,
     initialScreen: initialScreen, escapeHtml: escapeHtml,
     createListState: createListState, needsFetch: needsFetch,
     onFetchResult: onFetchResult, tickStart: tickStart, tickResult: tickResult,

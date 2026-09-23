@@ -667,5 +667,26 @@ t("R2", "przeladowanie o 4:00 nietkniete", function () {
   ok(/location\.replace/.test(SRC), "pelne przeladowanie");
 });
 
+console.log("\nGRUPA 13 - blad pobierania pogody");
+
+t("R3", "kazdy el(\"...\") w kodzie wskazuje istniejacy element HTML", function () {
+  /* fail() wolal el("strip") i el("msg"), ktorych nie ma -> wyjatek, brak ponownej proby */
+  var ids = {}, m, re = /el\("([^"]+)"\)/g;
+  while ((m = re.exec(SRC))) ids[m[1]] = true;
+  var missing = Object.keys(ids).filter(function (id) {
+    return HTML.indexOf('id="' + id + '"') === -1;
+  });
+  eq(missing.join(","), "", "brakujace id");
+});
+
+t("R4", "po bledzie pogody jest dokladnie jedna ponowna proba za minute", function () {
+  var body = SRC.match(/function fail\(reason\) \{[\s\S]*?\n    \}\n/);
+  ok(body, "fail() istnieje");
+  ok(/if \(retryTimer\) \{ clearTimeout\(retryTimer\); retryTimer = null; \}/.test(body[0]),
+     "stara proba kasowana, nie dokladana");
+  ok(/retryTimer = setTimeout\(load, 60000\)/.test(body[0]), "ponowienie za 60 s");
+  ok(/msg-today/.test(body[0]), "komunikat w widoku pogody");
+});
+
 console.log("\n" + pass + " passed, " + fail + " failed, " + todo + " todo\n");
 process.exit(fail ? 1 : 0);

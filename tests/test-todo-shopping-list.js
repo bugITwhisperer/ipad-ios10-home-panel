@@ -198,6 +198,15 @@ test("B8b only a real /exec URL with a key is accepted", function () {
   assert.equal(p.isValidExecUrl("https://script.googleusercontent.com/macros/echo?user_content_key=x"), false, "redirect URL");
 });
 
+test("B8c spaces and line breaks inside a pasted URL are removed, not rejected", function () {
+  var p = h.loadPanel();
+  var messy = "https://script.google.com/macros/s/AKfake_ID-123/exec? key=abc\n";
+  assert.equal(p.isValidExecUrl(messy), true);
+  var s = memStorage();
+  assert.equal(p.saveUrl(s, "  https://script.google.com/macros/s/AKfake_ID-123/exec?key= abc "), true);
+  assert.equal(p.getSavedUrl(s), GOOD_URL, "stored without any spaces");
+});
+
 test("B9 saved URL -> panel, setup skipped", function () {
   var p = h.loadPanel();
   var s = memStorage();
@@ -400,4 +409,52 @@ test("B24d each request gets its own callback name", function () {
   var a = env.appended[0].src.match(/callback=([^&]+)/)[1];
   var b = env.appended[1].src.match(/callback=([^&]+)/)[1];
   assert.notEqual(a, b);
+});
+
+/* ---- C. layout on the real iPad (iOS 10 Safari) ---- */
+
+function css() {
+  var html = h.readRepoFile("index.html");
+  return html.match(/<style>([\s\S]*?)<\/style>/)[1];
+}
+/* body of the first rule whose selector is exactly `sel` */
+function rule(sel) {
+  var esc = sel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  var m = css().match(new RegExp("(^|\\n)" + esc + "\\s*\\{([^}]*)\\}"));
+  assert.ok(m, "CSS rule not found: " + sel);
+  return m[2];
+}
+
+test("C1 columns split the width evenly on iOS 10 (no unitless flex-basis 0)", function () {
+  var col = rule(".col");
+  assert.match(col, /flex:\s*1 1 0%/, "flex-basis must be 0% - old Safari ignores a bare 0");
+  assert.match(col, /(^|[;\s])width:\s*0[;\s]/, "width: 0 so long text cannot push the column wider");
+  assert.match(col, /-webkit-box-flex:\s*1/, "old -webkit-box fallback kept");
+  assert.doesNotMatch(css(), /flex:\s*[\d.]+\s+[\d.]+\s+0\s*;/, "no bare 0 basis anywhere");
+});
+
+test("C2 long item text wraps and is fully visible", function () {
+  var item = rule(".item");
+  assert.match(item, /white-space:\s*normal/);
+  assert.match(item, /word-wrap:\s*break-word/, "long words without spaces break too");
+  assert.doesNotMatch(item, /nowrap|ellipsis/, "no cutting off with ...");
+  assert.doesNotMatch(css(), /\.item[^{]*\{[^}]*(nowrap|ellipsis)/, "no other .item rule cuts text");
+});
+
+test("C3 a column taller than the screen scrolls instead of spilling out", function () {
+  var col = rule(".col");
+  assert.match(col, /max-height:\s*\d+px/);
+  assert.match(col, /overflow-y:\s*auto/);
+  assert.match(col, /-webkit-overflow-scrolling:\s*touch/, "momentum scroll on iOS");
+});
+
+test("C5 CSS is well-formed: every { has its }", function () {
+  var s = css().replace(/\/\*[\s\S]*?\*\//g, "");
+  var depth = 0, i;
+  for (i = 0; i < s.length; i++) {
+    if (s[i] === "{") depth++;
+    if (s[i] === "}") depth--;
+    assert.ok(depth >= 0 && depth <= 1, "brace out of place near: " + s.slice(Math.max(0, i - 40), i + 1));
+  }
+  assert.equal(depth, 0, "unclosed rule");
 });
