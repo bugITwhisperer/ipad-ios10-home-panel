@@ -2,7 +2,8 @@
 
 [🇵🇱 Polski](README.md) · **🇬🇧 English**
 
-_By **Emilia Miller** (`bugITwhisperer`)_
+_By **Emilia Miller** (`bugITwhisperer`)_ <br>
+_Built with Claude (Anthropic)_
 
 > **One HTML file, zero dependencies on the iPad side, a 2012 iPad stuck on iOS 10** <br>
 > No modern weather app will install on it, so the page is written around its limits instead
