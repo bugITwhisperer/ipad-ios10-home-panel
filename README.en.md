@@ -268,3 +268,9 @@ From the repo root, Node 22+. No network, no Google account, no browser — deta
 | **C** | Shopping/ToDo               | ✅ Done      | Google Sheet + Apps Script, JSONP, key stored only on the iPad |
 | **2** | Rain radar                  | 📋 Planned  | RainViewer or IMGW; needs a map library, uncertain on iOS 10 |
 | **3** | City search                 | 🅿️ Parked   | text field + Open-Meteo geocoding API                        |
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © Emilia Miller
