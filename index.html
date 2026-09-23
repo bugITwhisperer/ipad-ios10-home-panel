@@ -22,7 +22,7 @@ html, body {
   overflow: hidden;
 }
 
-#app { box-sizing: border-box; height: 100%; padding: 22px 30px 16px 30px; }
+#app { box-sizing: border-box; height: 100%; padding: 20px 26px 14px 26px; }
 
 /* ---------- top bar ---------- */
 .top {
@@ -54,11 +54,11 @@ html, body {
 #mini u { text-decoration: none; color: #7d92ab; font-size: 17px; margin-left: 10px; }
 
 select {
-  font-family: inherit; font-size: 18px; color: #e8eef6;
-  background-color: #1d2735; border: 1px solid #33455c;
-  border-radius: 7px; padding: 8px 12px;
+  font-family: inherit; font-size: 15px; color: #b9c9db;
+  background-color: #1a2330; border: 1px solid #2b3a4d;
+  border-radius: 6px; padding: 5px 9px;
   -webkit-appearance: none; appearance: none;
-  min-width: 108px; margin-top: 9px;
+  min-width: 78px; margin-top: 7px;
 }
 select.off { display: none; }
 
@@ -67,34 +67,34 @@ select.off { display: none; }
 .view.on { display: block; }
 
 /* ---------- weather ---------- */
-.now { display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center; margin: 8px 0 12px 0; }
-.now-icon { font-size: 58px; line-height: 1; margin-right: 22px; }
-.now-temp { font-size: 74px; font-weight: 200; line-height: 0.92; color: #ffc46b; margin-right: 26px; }
-.now-text { font-size: 24px; font-weight: 300; line-height: 1.35; color: #b9c9db; }
-.now-text span { color: #7d92ab; font-size: 18px; }
+.now { display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center; margin: 10px 0 16px 0; }
+.now-icon { font-size: 76px; line-height: 1; margin-right: 22px; }
+.now-temp { font-size: 104px; font-weight: 200; line-height: 0.92; color: #ffc46b; margin-right: 26px; }
+.now-text { font-size: 28px; font-weight: 300; line-height: 1.35; color: #b9c9db; }
+.now-text span { color: #7d92ab; font-size: 21px; }
 
 #strip-today, #strip-next { display: -webkit-box; display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }
 .cell {
-  -webkit-box-flex: 1; flex: 1 0 auto; min-width: 84px;
-  text-align: center; padding: 10px 7px 11px 7px; margin-right: 8px;
+  -webkit-box-flex: 1; flex: 1 0 auto; min-width: 104px;
+  text-align: center; padding: 16px 9px 18px 9px; margin-right: 10px;
   background-color: #17202c; border-radius: 9px; border-top: 2px solid #2b3a4d;
 }
 .cell:last-child { margin-right: 0; }
 .cell.edge { border-top-color: #ffc46b; }
-.c-when { font-size: 16px; color: #7d92ab; margin-bottom: 7px; }
-.c-icon { font-size: 25px; line-height: 1; margin-bottom: 7px; }
-.c-temp { font-size: 23px; font-weight: 300; color: #ffc46b; margin-bottom: 2px; }
-.c-lo { font-size: 18px; color: #6f8299; margin-bottom: 7px; }
-.c-rain { font-size: 15px; color: #6fb6f0; margin-bottom: 3px; }
-.c-wind { font-size: 15px; color: #7d92ab; }
+.c-when { font-size: 19px; color: #8fa3b8; margin-bottom: 10px; }
+.c-icon { font-size: 34px; line-height: 1; margin-bottom: 10px; }
+.c-temp { font-size: 31px; font-weight: 300; color: #ffc46b; margin-bottom: 2px; }
+.c-lo { font-size: 22px; color: #6f8299; margin-bottom: 10px; }
+.c-rain { font-size: 18px; color: #6fb6f0; margin-bottom: 5px; }
+.c-wind { font-size: 18px; color: #7d92ab; }
 
 /* ---------- stubs ---------- */
 .stub { margin-top: 40px; font-size: 24px; font-weight: 300; line-height: 1.6; color: #6f8299; }
 .stub b { display: block; font-weight: 400; font-size: 30px; color: #b9c9db; margin-bottom: 10px; }
 
 .strip-head {
-  font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: #56687d; margin: 4px 0 7px 0;
+  font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #6f8299; margin: 10px 0 9px 0;
 }
 .msg { margin-top: 30px; font-size: 22px; font-weight: 300; line-height: 1.5; color: #8fa3b8; }
 .msg b { display: block; font-weight: 400; color: #e8eef6; margin-bottom: 6px; }
