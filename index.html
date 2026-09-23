@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Pogoda">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Pogoda</title>
 <style>
 html, body {
@@ -314,6 +317,14 @@ function emptyHourlyMessage(data, nowIso) {
   };
 }
 
+function msUntil4am(now) {
+  var t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 4, 0, 0, 0);
+  if (t.getTime() <= now.getTime()) {
+    t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 4, 0, 0, 0);
+  }
+  return t.getTime() - now.getTime();
+}
+
 /* ---------- rendering ---------- */
 
 function cellHtml(c) {
@@ -426,6 +437,11 @@ if (typeof document !== "undefined") {
     el("range").onchange = paint;
     load();
     setInterval(load, 900000);
+
+    setTimeout(function () {
+      var base = location.href.split("?")[0].split("#")[0];
+      location.replace(base + "?v=" + new Date().getTime());
+    }, msUntil4am(new Date()));
   })();
 }
 
@@ -435,6 +451,7 @@ if (typeof module !== "undefined") {
     buildDaily: buildDaily,
     buildHourly: buildHourly,
     emptyHourlyMessage: emptyHourlyMessage,
+    msUntil4am: msUntil4am,
     cellHtml: cellHtml,
     nowHtml: nowHtml,
     dayLabel: dayLabel
