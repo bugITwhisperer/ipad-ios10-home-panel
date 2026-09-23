@@ -2,7 +2,8 @@
 
 **🇵🇱 Polski** · [🇬🇧 English](README.en.md)
 
-_By **Emilia Miller** (`bugITwhisperer`)_
+_By **Emilia Miller** (`bugITwhisperer`)_ <br>
+_Napisane z Claude (Anthropic)_
 
 > **Jeden plik HTML, zero zależności po stronie iPada, iPad z 2012 roku z iOS 10.**
 > Nie zadziała na nim żadna nowa app pogodowa stąd strona napisana pod jego ograniczenia.
