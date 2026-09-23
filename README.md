@@ -53,7 +53,8 @@ Panel przełącza się sam między trzema widokami. Pogoda dostaje połowę czas
 
 - pełna pętla trwa **20 minut**
 - zakładki u góry pozwalają przełączyć widok ręcznie
-- dotknięcie ekranu **wstrzymuje rotację na 5 min**, licznik liczony od ostatniego dotknięcia
+- dotknięcie ekranu **wstrzymuje rotację na 5 min**, licznik liczony od ostatniego dotknięcia'
+- przy kalendarzu i zakupach dropdown ustępuje miejsca **jednolinijkowej pogodzie bieżącej** — temperatura jest na oku niezależnie od widoku
 
 ---
 

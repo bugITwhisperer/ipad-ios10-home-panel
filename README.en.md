@@ -54,6 +54,7 @@ The panel rotates through three views on its own. Weather gets half the loop.
 - a full loop takes **20 minutes**
 - tabs at the top switch views manually
 - touching the screen **pauses rotation for 5 min**, counted from the last touch
+- on the calendar and shopping views the dropdown gives way to a **one-line current-conditions bar**, so the temperature stays visible whichever view is up
 
 ---
 
