@@ -6,7 +6,6 @@ _By **Emilia Miller** (`bugITwhisperer`)_ <br>
 _Built with Claude (Anthropic)_
 
 > **One HTML file, zero dependencies on the iPad side, a 2012 iPad stuck on iOS 10** <br>
-> No modern weather app will install on it, so the page is written around its limits instead
 
 **Live:** <https://bugitwhisperer.github.io/ipad-ios10-home-panel/>
 
@@ -33,8 +32,8 @@ _Built with Claude (Anthropic)_
 ## 🤔 Why this exists
 
 A 4th-generation iPad (**A1458**, 2012) tops out at **iOS 10** — Apple support ended long ago. <br>
-The App Store won't install the IKEA Home smart app, or any current weather app either. <br>
-So instead: one static page, written in the old syntax this Safari still understands.
+
+One static page, written in the old syntax this Safari still understands:
 
 | Layer      | Choice                               | Reason                            |
 | ---------- | ------------------------------------ | --------------------------------- |
@@ -48,22 +47,21 @@ So instead: one static page, written in the old syntax this Safari still underst
 
 ## 🔀 Three views
 
-The panel rotates through three views on its own. Weather gets half the loop.
+The panel rotates through three views (tabs) on its own:
 
 | View         | Time on screen | Status               |
 | ------------ | -------------- | -------------------- |
 | **Weather**  | 10 min         | ✅ working            |
 | **Calendar** | 5 min          | 🚧 placeholder       |
-| **Shopping** | 5 min          | ✅ working            |
+| **Shopping/ToDo List** | 5 min          | ✅ working            |
 
 - a full loop takes **20 minutes**
 - tabs at the top switch views manually
 - touching the screen **pauses rotation for 5 min**, counted from the last touch
-- on the calendar and shopping views the dropdown gives way to a **one-line current-conditions bar**, so the temperature stays visible whichever view is up
 
 ---
 
-## 👀 What the weather view shows
+## 👀 Weather
 
 **Current conditions** at the top: temperature, icon, wind, precipitation
 
@@ -84,7 +82,7 @@ Every cell: **temperature · icon · chance of rain · wind**
 
 ---
 
-## 📝 Shopping/ToDo
+## 📝 Shopping/ToDo List
 
 Two columns side by side, **Zakupy** (shopping) and **ToDo**, read from two tabs of one Google Sheet (`Zakupy`, `To do`).<br>
 Adding and editing happens in the Google Sheets app — the iPad only **displays and ticks off**.
@@ -113,17 +111,16 @@ Sheet time zone: `File → Settings → (GMT+01:00) Berlin`.
 
 ### Google script (`apps-script/Code.gs`)
 
-1. In the sheet: `Extensions → Apps Script`, paste the whole of `apps-script/Code.gs`
-2. Run `generateKey` — the key appears in the `Execution log`
-3. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone** — not "Anyone with Google account": the home-screen app isn't signed in to Google and would get a login page instead of the list
-4. After every code change: `Deploy → Manage deployments → ✏️ → Version: New version` — the URL stays the same
+1. In the Google Sheet: `Extensions → Apps Script`, paste the whole of `apps-script/Code.gs`
+2. Run `generateKey`
+3. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone** — not "Anyone with Google account": the home-screen app isn't signed in to Google
+4. After every code change: `Deploy → Manage deployments → ✏️ → Version: New version`
 5. On the iPad, in the Zakupy/ToDo tab: paste `https://script.google.com/macros/s/…/exec?key=KEY` → `Zapisz` (Save)
-6. The `Wyczyść` (Clear) button empties the field — handy when a pasted address is rejected
 
-> 🔐 The key **never goes into the repo** — the repo is public. It is stored only in the browser storage on the iPad.
+> 🔐 The key is stored only in the browser storage on the iPad.
 > The "zmień adres" (change address) link under the list replaces it. If the URL ever leaks: run `generateKey` again + a new deployment version.
 
-[`health-check/list.html`](https://bugitwhisperer.github.io/ipad-ios10-home-panel/health-check/list.html) — health check: can the iPad reach the Google script (the address without the key is enough; an `auth` answer also means the connection works).
+[`health-check/list.html`](https://bugitwhisperer.github.io/ipad-ios10-home-panel/health-check/list.html) — health check: can the iPad reach the Google script (the address without the key is enough; an `auth` answer also means the connection works)
 
 ---
 
@@ -136,18 +133,11 @@ Sheet time zone: `File → Settings → (GMT+01:00) Berlin`.
 | **touch at night**       | full interface for 30 s, views can still be switched |
 | **another touch**        | timer restarts at a full 30 s                      |
 
-Sunrise comes from the API, but it is pinned to the **current calendar day** — otherwise a `sunrise` carrying another date would darken the screen in the evening.
-
 ---
 
 ## ☀️ Light/dark theme
 
 A button next to the tabs switches the look. The icon shows the theme you will **get**: ☀️ in dark, 🌙 in light.
-
-- the choice is saved on the iPad and survives the 4:00 reload
-- dark by default — also when the saved value is unreadable
-- light is grey, not white — easier on an old screen
-- night mode always goes black, and the chosen theme comes back at dawn
 
 ---
 
@@ -209,8 +199,6 @@ Tests keep anything newer from slipping in — a static scan rejects the banned 
 | CSS custom properties (`--var`)       | literal values                          |
 | `gap`, CSS grid, `clamp()`, `:is()`   | margins, flexbox with `-webkit-` prefix |
 
-For something running for weeks, what's **absent** matters too: every timer lives in a single variable and is cleared before a new one is set, and views are hidden by class rather than removed from the DOM.
-
 ---
 
 ## 🔄 Refresh cycles
@@ -246,9 +234,10 @@ var LON = 22.5684;
 
 1. **Auto-Lock off** — `Settings → Display & Brightness → Auto-Lock → Never`
 2. **Home-screen icon** — open <https://bugitwhisperer.github.io/ipad-ios10-home-panel/> in Safari → `Share` → `Add to Home Screen` → launch from the icon (the address bar disappears)
-3. **Landscape rotation lock** — Control Centre, or the side switch (`Settings → General → Use Side Switch To:`)
+3. **Landscape rotation lock** — Control Centre
 4. **Guided Access** _(optional)_ — `Settings → General → Accessibility → Guided Access` — locks the Home button so a stray tap can't exit the page
-   To start it: triple-click Home → `Start`. Same to exit, plus the passcode.
+<br>
+To start it: triple-click Home → `Start`. Same to exit, plus the passcode.
 5. **Script address in home-screen mode** — the home-screen app has **separate storage** from Safari, so the address with the key has to be pasted there (Zakupy/ToDo tab)
 
 ---
@@ -279,6 +268,3 @@ From the repo root, Node 22+. No network, no Google account, no browser — deta
 | **C** | Shopping/ToDo               | ✅ Done      | Google Sheet + Apps Script, JSONP, key stored only on the iPad |
 | **2** | Rain radar                  | 📋 Planned  | RainViewer or IMGW; needs a map library, uncertain on iOS 10 |
 | **3** | City search                 | 🅿️ Parked   | text field + Open-Meteo geocoding API                        |
-
-The Shopping/ToDo list needed no server of its own: the secret (the key) lives only on the iPad, and Apps Script answers over JSONP, because iOS 10 won't let ordinary requests through to it (CORS). The page stays on GitHub Pages.<br>
-The calendar can probably follow the same pattern — to be checked when it is planned.
