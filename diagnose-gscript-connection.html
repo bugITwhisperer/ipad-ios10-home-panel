@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width"><title>Test 21</title>
+<style>body{font:20px sans-serif;padding:20px}input{width:100%;font-size:18px}
+button{font-size:22px;margin:10px 0;padding:10px}pre{white-space:pre-wrap;background:#eee;padding:10px}</style>
+</head><body>
+<h1>Test 21</h1>
+<input id="u" placeholder="Wklej URL .../exec">
+<button onclick="testXhr()">1. Test XHR</button>
+<button onclick="testJsonp()">2. Test JSONP</button>
+<pre id="out"></pre>
+<script>
+function log(m){ document.getElementById('out').textContent += m + '\n'; }
+function url(){ return document.getElementById('u').value.replace(/^\s+|\s+$/g, ''); }
+function testXhr(){
+  var x = new XMLHttpRequest();
+  x.open('GET', url(), true);
+  x.timeout = 15000;
+  x.onload = function(){ log('XHR status ' + x.status + ': ' + x.responseText); };
+  x.onerror = function(){ log('XHR BLAD (siec/CORS)'); };
+  x.ontimeout = function(){ log('XHR TIMEOUT'); };
+  x.send();
+}
+function testJsonp(){
+  window.cbTest = function(d){ log('JSONP OK: ' + JSON.stringify(d)); };
+  var s = document.createElement('script');
+  s.src = url() + (url().indexOf('?') < 0 ? '?' : '&') + 'callback=cbTest';
+  s.onerror = function(){ log('JSONP BLAD'); };
+  document.body.appendChild(s);
+}
+</script></body></html>
