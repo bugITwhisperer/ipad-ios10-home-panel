@@ -43,13 +43,24 @@ html, body {
 }
 .tab.on { color: #e8eef6; border-top-color: #ffc46b; background-color: #1d2735; }
 
+#mini {
+  display: none;
+  font-size: 21px; font-weight: 300; color: #b9c9db;
+  margin-top: 11px; white-space: nowrap;
+}
+#mini.on { display: inline; }
+#mini i { font-style: normal; font-size: 24px; margin-right: 8px; }
+#mini b { font-weight: 400; color: #ffc46b; font-size: 27px; margin-right: 10px; }
+#mini u { text-decoration: none; color: #7d92ab; font-size: 17px; margin-left: 10px; }
+
 select {
   font-family: inherit; font-size: 18px; color: #e8eef6;
   background-color: #1d2735; border: 1px solid #33455c;
   border-radius: 7px; padding: 8px 12px;
   -webkit-appearance: none; appearance: none;
-  min-width: 160px; margin-top: 9px;
+  min-width: 108px; margin-top: 9px;
 }
+select.off { display: none; }
 
 /* ---------- views ---------- */
 .view { display: none; }
@@ -104,11 +115,12 @@ select {
     <div>
       <p class="place" id="place">Lublin</p>
       <p class="stamp" id="stamp">Wczytywanie...</p>
+      <span id="mini"></span>
       <select id="range">
-        <option value="tomorrow">Jutro, godzinowo</option>
-        <option value="3">Najbli&#380;sze 3 dni</option>
-        <option value="5">Najbli&#380;sze 5 dni</option>
-        <option value="7">Najbli&#380;szych 7 dni</option>
+        <option value="tomorrow">Jutro</option>
+        <option value="3">3 dni</option>
+        <option value="5">5 dni</option>
+        <option value="7">7 dni</option>
       </select>
     </div>
     <div id="tabs"></div>
@@ -123,12 +135,12 @@ select {
     <div id="strip-next"></div>
   </div>
 
-  <div class="view" id="view-kalendarz">
-    <p class="stub"><b>Kalendarz</b>Etap B &mdash; wydarzenia na dzi&#347; ze wsp&#243;lnego kalendarza.</p>
+  <div class="view" id="view-lista">
+    <p class="stub"><b>Zakupy / ToDo</b>Etap C &mdash; pozycje z arkusza, odhaczane palcem.</p>
   </div>
 
-  <div class="view" id="view-lista">
-    <p class="stub"><b>Lista zakup&#243;w</b>Etap C &mdash; pozycje z arkusza, odhaczane palcem.</p>
+  <div class="view" id="view-kalendarz">
+    <p class="stub"><b>Kalendarz</b>Etap B &mdash; wydarzenia na dzi&#347; ze wsp&#243;lnego kalendarza.</p>
   </div>
 </div>
 
@@ -151,9 +163,9 @@ var DNI = ["niedziela", "poniedzia\u0142ek", "wtorek", "\u015broda",
 
 /* rotation plan: weather gets half the loop */
 var VIEWS = [
-  { id: "pogoda",    label: "Pogoda",  ms: 600000 },
-  { id: "kalendarz", label: "Kalendarz", ms: 300000 },
-  { id: "lista",     label: "Zakupy",  ms: 300000 }
+  { id: "pogoda",    label: "Pogoda",       ms: 600000 },
+  { id: "lista",     label: "Zakupy/ToDo",  ms: 300000 },
+  { id: "kalendarz", label: "Kalendarz",    ms: 300000 }
 ];
 
 var PAUSE_MS = 300000;   /* touch in daytime holds the view */
@@ -368,6 +380,25 @@ function nowHtml(data) {
   return s;
 }
 
+/* compact one-line version of the current conditions, for the header.
+   Inline elements only - it must never become a second block. */
+function miniNowHtml(data) {
+  if (!data || !data.current) {
+    return "<i>\uD83C\uDF21</i><b>--\u00B0</b>brak danych";
+  }
+  var c = data.current;
+  var w = wmo(c.weather_code);
+  var temp = round(c.temperature_2m);
+  var wind = round(c.wind_speed_10m);
+  var rain = (c.precipitation === null || c.precipitation === undefined)
+    ? "--" : c.precipitation;
+  return "<i>" + w.icon + "</i>" +
+         "<b>" + (temp === null ? "--" : temp) + "\u00B0</b>" +
+         w.text +
+         "<u>\uD83D\uDCA8 " + (wind === null ? "--" : wind) + " km/h" +
+         " &nbsp; \uD83D\uDCA7 " + rain + " mm</u>";
+}
+
 function tabsHtml(activeId) {
   var s = "", i;
   for (i = 0; i < VIEWS.length; i++) {
@@ -443,6 +474,12 @@ if (typeof document !== "undefined") {
         el("view-" + VIEWS[i].id).className = "view" + (VIEWS[i].id === d.view ? " on" : "");
       }
       el("tabs").innerHTML = tabsHtml(d.view);
+
+      /* header shows the dropdown on the weather view, the mini bar elsewhere */
+      var onWeather = d.view === "pogoda";
+      el("range").className = onWeather ? "" : "off";
+      el("mini").className = onWeather ? "" : "on";
+      el("mini").innerHTML = onWeather ? "" : miniNowHtml(cache);
       el("night").className = d.dark ? "on" : "";
       if (d.view === "pogoda") paintWeather();
       schedule(d);
@@ -539,7 +576,7 @@ if (typeof module !== "undefined") {
     createState: createState, currentView: currentView, advance: advance,
     decide: decide, onTouch: onTouch, onManualSwitch: onManualSwitch,
     isDark: isDark, dawnTime: dawnTime, dawnToday: dawnToday, dimStart: dimStart,
-    tabsHtml: tabsHtml
+    tabsHtml: tabsHtml, miniNowHtml: miniNowHtml
   };
 }
 </script>
