@@ -29,6 +29,13 @@ function loadGScript() {
   return runInSandbox(fs.readFileSync(file, "utf8"), "Code.gs");
 }
 
+/* calendar backend — a separate Apps Script project on the panel's own account */
+function loadCalScript() {
+  var file = path.join(ROOT, "apps-script", "Calendar.gs");
+  if (!fs.existsSync(file)) throw new Error("apps-script/Calendar.gs does not exist yet");
+  return runInSandbox(fs.readFileSync(file, "utf8"), "Calendar.gs");
+}
+
 function readRepoFile(rel) {
   return fs.readFileSync(path.join(ROOT, rel), "utf8");
 }
@@ -40,5 +47,5 @@ var fmt = new Intl.DateTimeFormat("en-CA", {
 });
 function dayOf(d) { return fmt.format(d); }
 
-module.exports = { loadPanel: loadPanel, loadGScript: loadGScript,
+module.exports = { loadPanel: loadPanel, loadGScript: loadGScript, loadCalScript: loadCalScript,
                    readRepoFile: readRepoFile, dayOf: dayOf };
