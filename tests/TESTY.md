@@ -16,6 +16,20 @@ node tests/test-panel.js     # czytelny wydruk PASS/FAIL
 node --test tests/test-todo-shopping-list.js
 ```
 
+### Opcjonalnie: czy widoki mieszczą się na ekranie iPada
+
+Osobny test w prawdziwej przeglądarce (Chromium, 1024×768, oba motywy, wszystkie tryby
+dolnego paska pogody i lista). Nie wchodzi do `node --test`.
+
+```bash
+npm install                        # raz: instaluje Playwright (tylko do testów)
+npx playwright install chromium    # raz: pobiera przeglądarkę (~150 MB)
+npm run layout
+```
+
+Chromium to nie Safari z iOS 10 - test łapie „coś urosło za bardzo”,
+ostatecznym sprawdzeniem zostaje iPad.
+
 Strefa `Europe/Warsaw` jest ustawiana w samych plikach testów, więc nie trzeba
 już podawać `TZ=` ani generować `panel-app.js` — testy czytają `index.html`
 bezpośrednio.
@@ -30,6 +44,7 @@ bezpośrednio.
 | `fixtures.js`           | generator sztucznych odpowiedzi Open-Meteo                  |
 | `test-todo-shopping-list.js`     | testy etapu C: skrypt Google + widok Zakupy/ToDo + JSONP    |
 | `helpers.js`            | ładuje `index.html` i `Code.gs` do testów bez przeglądarki  |
+| `layout-check.js`       | opcjonalny test układu w przeglądarce (`npm run layout`)    |
 
 Testy nie wychodzą do sieci. `fixtures.js` buduje odpowiedź o tym samym
 kształcie co prawdziwe API, z podanymi godzinami wschodu i zachodu — dzięki
@@ -48,6 +63,8 @@ Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 | **10** | dwa paski godzinowe — zakresy, dropdown, 3/5/7 dni           |
 | **11** | mini pogoda w nagłówku — zawartość, przełączanie, braki danych |
 | **12** | motyw jasny/ciemny — przełączanie, zapis, noc, kontrast        |
+| **13** | błąd pobierania pogody — istniejące elementy, jedna ponowna próba |
+| **14** | kafelki — min. temperatura tylko w dziennych, `--` gdy brak     |
 | **A**  | etap C, skrypt Google — odczyt list, północ, klucz, odhaczanie |
 | **B**  | etap C, iPad — konfiguracja, lista, offline, JSONP, XSS        |
 | **R**  | regresja — logika pogody i przeładowanie o 4:00              |

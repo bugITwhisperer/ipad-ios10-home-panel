@@ -1,0 +1,12 @@
+{
+  "name": "ipad-ios10-home-panel",
+  "private": true,
+  "description": "Tests for the iPad wall panel. The panel itself has no dependencies.",
+  "scripts": {
+    "test": "node --test",
+    "layout": "node tests/layout-check.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}
