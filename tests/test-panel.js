@@ -255,11 +255,11 @@ t(41, "brak narastajacych timerow - kazdy setTimeout ma swoj clear", function ()
   eq(intervals, 2, "dokladnie 2 setInterval: odswiezanie danych i zegar minutowy");
 });
 
-t(42, "lista i zaslepka kalendarza nie wywalaja rotacji", function () {
+t(42, "lista i kalendarz nie wywalaja rotacji", function () {
   ok(/id="view-lista"/.test(HTML), "kontener zakupow istnieje");
   ok(/id="view-kalendarz"/.test(HTML), "kontener kalendarza istnieje");
   ok(/id="lista"/.test(HTML) && /id="setup"/.test(HTML), "widok listy: kontener i ekran konfiguracji");
-  ok(HTML.indexOf("<b>Kalendarz</b>") > -1, "zaslepka kalendarza (etap B) nadal jest");
+  ok(/id="kalendarz"/.test(HTML) && /id="cal-setup"/.test(HTML), "widok kalendarza: kontener i ekran konfiguracji (zaslepka etapu B usunieta)");
   var s = app.createState(), i;
   var now = at(2026, 9, 23, 14, 0);
   for (i = 0; i < 9; i++) {

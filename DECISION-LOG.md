@@ -57,3 +57,18 @@ When a decision is replaced, the old row stays and gets **Superseded by #N**.
 | 32 | Theme tests (group 12) kept and made green by merging the theme code into the Shopping/ToDo version | tests from an earlier session described code that had not reached the repo | marking them as TODO |
 | 33 | A browser check at iPad size (1024×768, both themes) after every UI change | unit tests passed while a missing `}` switched off the whole light theme | unit tests only |
 | 34 | README shows features, not stage letters (only the Roadmap table keeps them); this log is in English | the README describes what exists now; stage history lives here | stage letters throughout the README |
+
+---
+
+## Calendar — 2026-09-24
+
+| #  | Decision | Why | Rejected alternative |
+| -- | -------- | --- | -------------------- |
+| 35 | Separate Google account for the panel (`puxle.home.panel`), invited to chosen events | only what is shared on purpose reaches the wall | reading Em's or Dorota's own calendars |
+| 36 | Separate Apps Script project on that account (`apps-script/Calendar.gs`), second secret URL on the iPad (`gcalUrl`) | the script can only see the panel calendar; the list and calendar fail independently | calendar code in the Zakupy script with the panel calendar shared to Em's account — that script would get access to all of Em's calendars |
+| 37 | Invitations: "Only if the sender is known" + E and D in the panel account's contacts | invites land without accepting, strangers' invites do not | "From everyone" |
+| 38 | Tags by creator: E green, D blue, anyone else = login before `@`; E/D addresses live in Script Properties | who set it up is visible at a glance; no address in the public repo or in the response | full e-mail — too long for a 2 m read |
+| 39 | Today: finished events stay struck through until midnight; overflow hides struck ones first | same feel as ticked items on the list; upcoming events never pushed out | removing them at once (like weather hours) |
+| 40 | Same `Jutro / 3 / 5 / 7 dni` choice as the weather, but its own dropdown in the calendar view | familiar control; switching one view never changes the other | sharing the header dropdown |
+| 41 | One fetch of 8 days when the view opens; the dropdown filters locally | one request per visit, instant dropdown | a request per dropdown change |
+| 42 | Event past midnight shown on both days (`22:00–02:00`, then `do 02:00`); a day fully covered shows `cały dzień` | at 01:00 the running event must still be in "Dziś" | only on the start day |

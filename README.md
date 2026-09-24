@@ -54,7 +54,7 @@ Panel przełącza się sam między trzema widokami:
 | Widok         | Czas na ekranie | Stan                 |
 | ------------- | --------------- | -------------------- |
 | **Pogoda**    | 10 min          | ✅ działa             |
-| **Kalendarz** | 5 min           | 🚧 zaślepka          |
+| **Kalendarz** | 5 min           | ✅ działa             |
 | **Lista Zakupy/Todo**    | 5 min           | ✅ działa             |
 
 - pełna pętla wyświetlania trwa **20 minut**
@@ -102,10 +102,6 @@ Dopisywanie i edycja w apce Google Sheets - iPad tylko **wyświetla i odhacza**.
 
 ---
 
-## 📝 Kalendarz
-
----
-
 ### Arkusz Google
 
 Szablon „Zakupy-ToDo-list” z checkboxami, dane od wiersza 4:
@@ -133,6 +129,41 @@ Strefa czasowa arkusza: `Plik → Ustawienia → (GMT+01:00) Warsaw`
 > Link „zmień adres” pod listą pozwala go podmienić. Gdy adres wycieknie: ponownie `generateKey` + nowa wersja wdrożenia
 
 [`health-check/list.html`](https://bugitwhisperer.github.io/ipad-ios10-home-panel/health-check/list.html) - health check: czy iPad łączy się ze skryptem Google (adres bez klucza wystarczy, odpowiedź `auth` też oznacza, że połączenie działa)
+
+## 📅 Kalendarz
+
+Wydarzenia z kalendarza osobnego konta Google panelu (`puxle.home.panel`).<br>
+Na panel trafia tylko to, do czego to konto zostanie **zaproszone** - iPad tylko wyświetla.
+
+| Co                       | Jak                                                                     |
+| ------------------------ | ----------------------------------------------------------------------- |
+| **Lewa kolumna**         | Dziś - zakończone wydarzenia zostają **przekreślone** do północy        |
+| **Prawa kolumna**        | dropdown `Jutro / 3 dni / 5 dni / 7 dni`, liczone od jutra              |
+| **Kto**                  | znacznik po twórcy: **E** zielony, **D** niebieski, inni - login sprzed `@` |
+| **Całodniowe**           | na górze dnia jako „cały dzień”                                         |
+| **Przez północ**         | w obu dniach, drugiego dnia jako „do 02:00”                             |
+| **Dużo wydarzeń**        | 5 na dzień, potem `+N więcej` - najpierw chowają się przekreślone       |
+| **Długi tytuł**          | zawija się, nic nie jest ucinane                                        |
+| **Pobieranie**           | przy wejściu w widok, 8 dni naraz; dropdown filtruje bez pobierania     |
+| **Brak sieci**           | zostają ostatnie dane z dopiskiem `offline - aktualizacja HH:MM`        |
+
+### Konto panelu
+
+`Ustawienia → Ustawienia wydarzeń → Dodawaj zaproszenia do mojego kalendarza → Tylko jeśli nadawca jest znany`<br>
++ adresy E i D dodane do kontaktów konta panelu. Strefa czasowa: Warszawa.
+
+### Skrypt Google (`apps-script/Calendar.gs`)
+
+Osobny projekt, na koncie panelu - widzi tylko kalendarz panelu.
+
+1. zalogowana na konto panelu: [script.google.com](https://script.google.com) → `Nowy projekt`, wkleić całą zawartość `apps-script/Calendar.gs`
+2. `Ustawienia projektu` → strefa czasowa `(GMT+01:00) Warsaw`
+3. `Ustawienia projektu → Właściwości skryptu`: `EMAIL_E` = adres E, `EMAIL_D` = adres D (adresy nie trafiają do repo)
+4. z dropdownu wybrać `generateKey` → `Uruchom`, zaakceptować dostęp do kalendarza, skopiować klucz z logu
+5. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone**
+6. na iPadzie, w zakładce Kalendarz: wkleić `https://script.google.com/macros/s/…/exec?key=KLUCZ` → `Zapisz`
+
+> 🔐 Adres kalendarza ma w pamięci iPada własne miejsce (`gcalUrl`) - nie nadpisuje adresu listy.
 
 ---
 
@@ -262,6 +293,7 @@ Z głównego folderu, Node 22+. Bez sieci, bez konta Google, bez przeglądarki -
 | ---------------------------------- | ------ | --------------------------------------------------- |
 | `tests/test-panel.js`              | 56     | rotacja, tryb nocny, pogoda, motyw, zgodność iOS 10 |
 | `tests/test-todo-shopping-list.js` | 36     | skrypt Google, widok listy, JSONP, układ na iOS 10  |
+| `tests/test-calendar.js`           | 33     | skrypt kalendarza, widok kalendarza, zmiana czasu   |
 
 ---
 
@@ -272,7 +304,7 @@ Z głównego folderu, Node 22+. Bez sieci, bez konta Google, bez przeglądarki -
 | **1** | Pogoda + prognoza            | ✅ Gotowe       | —                                                                  |
 | **A** | Rotacja widoków + tryb nocny | ✅ Gotowe       | —                                                                  |
 | **—** | Motyw jasny/ciemny           | ✅ Gotowe       | —                                                                  |
-| **B** | Kalendarz                    | 📋 Planowane   | dedykowane konto Google zapraszane na wspólne wydarzenia           |
+| **B** | Kalendarz                    | ✅ Gotowe       | osobne konto Google + osobny Apps Script, JSONP, klucz tylko na iPadzie |
 | **C** | Zakupy/ToDo                  | ✅ Gotowe       | arkusz Google + Apps Script, JSONP, klucz tylko na iPadzie         |
 | **2** | Radar opadów                 | 📋 Planowane   | RainViewer lub IMGW; wymaga biblioteki mapowej, na iOS 10 niepewne |
 | **3** | Wyszukiwarka miast           | 🅿️ Zaparkowane | Pole tekstowe + geocoding API Open-Meteo                           |

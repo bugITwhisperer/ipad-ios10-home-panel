@@ -138,6 +138,42 @@ select.off { display: none; }
   background-color: #1d2735; border-radius: 7px; border-top: 2px solid #ffc46b;
 }
 
+/* ---------- Kalendarz ---------- */
+#cal-setup.off, .cal-bar.off { display: none; }
+#cal-setup input {
+  box-sizing: border-box; width: 100%;
+  font-family: inherit; font-size: 18px; color: #e8eef6;
+  background-color: #1a2330; border: 1px solid #2b3a4d; border-radius: 6px;
+  padding: 10px; margin: 14px 0 12px 0;
+  -webkit-user-select: text; user-select: text;
+}
+.cal-bar { text-align: right; margin-top: 8px; }
+.cal-bar select { margin-top: 0; font-size: 17px; }
+.cal-head {
+  font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #6f8299; margin: 18px 0 8px 0;
+}
+.cal-head.first { margin-top: 0; }
+.ev {
+  color: #e8eef6; padding: 9px 14px; margin-bottom: 7px;
+  background-color: #17202c; border-radius: 9px; border-left: 3px solid #2b3a4d;
+}
+.ev.past { color: #56687d; text-decoration: line-through; border-left-color: #ffc46b; }
+.ev-time { display: block; font-size: 17px; color: #8fa3b8; margin-bottom: 2px; }
+.ev.past .ev-time { color: #56687d; }
+.ev-title {
+  font-size: 25px; font-weight: 300; line-height: 1.25;
+  white-space: normal; word-wrap: break-word;
+}
+.tag {
+  display: inline-block; font-size: 16px; font-weight: 600; line-height: 1.3;
+  padding: 1px 8px; margin-left: 9px; border-radius: 5px;
+  vertical-align: 3px; color: #ffffff;
+}
+.tag-e { background-color: #2e9e5b; }
+.tag-d { background-color: #2f6fd1; }
+.tag-x { background-color: #2b3a4d; color: #b9c9db; font-weight: 400; }
+
 /* ---------- light theme: dimmed grey, easy on an old LCD in a room;
    weather tiles steel blue so the white cloud icons stay visible ---------- */
 body.light { background-color: #b4bbc4; color: #1f2a37; }
@@ -171,6 +207,13 @@ body.light .more { color: #a0620a; }
 body.light .empty { color: #56647a; }
 body.light .list-note { color: #8a4f00; }
 body.light .link { color: #4d5b6c; }
+body.light .cal-head { color: #4d5b6c; }
+body.light .ev { background-color: #c8ced6; color: #1f2a37; border-left-color: #939eab; }
+body.light .ev.past { color: #5f6c7c; border-left-color: #a0620a; }
+body.light .ev-time { color: #435164; }
+body.light .ev.past .ev-time { color: #5f6c7c; }
+body.light .tag-x { background-color: #a6afba; color: #2e3b4b; }
+body.light #cal-setup input { background-color: #c8ced6; color: #1f2a37; border-color: #8e99a6; }
 body.light #setup input { background-color: #c8ced6; color: #1f2a37; border-color: #8e99a6; }
 body.light .btn { background-color: #a6afba; color: #1f2a37; border-top-color: #a0620a; }
 body.light #theme { background-color: #a6afba; border-top-color: #939eab; }
@@ -240,7 +283,21 @@ body.light #ver { color: #5f6c7c; }
   </div>
 
   <div class="view" id="view-kalendarz">
-    <p class="stub"><b>Kalendarz</b>Etap B &mdash; wydarzenia na dzi&#347; ze wsp&#243;lnego kalendarza.</p>
+    <div id="cal-setup" class="off">
+      <p class="msg"><b>Pod&#322;&#261;cz kalendarz</b>Wklej adres skryptu kalendarza razem z kluczem:<br>https://script.google.com/macros/s/&hellip;/exec?key=&hellip;</p>
+      <input id="cal-setup-url" type="url" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <div class="btn" data-act="cal-save">Zapisz</div><div class="btn" data-act="cal-clear">Wyczy&#347;&#263;</div>
+      <p class="list-note" id="cal-setup-err"></p>
+    </div>
+    <div class="cal-bar" id="cal-bar">
+      <select id="cal-range">
+        <option value="tomorrow">Jutro</option>
+        <option value="3">3 dni</option>
+        <option value="5">5 dni</option>
+        <option value="7">7 dni</option>
+      </select>
+    </div>
+    <div id="kalendarz"></div>
   </div>
 </div>
 
@@ -250,7 +307,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-09-24.4";
+var APP_VERSION = "2026-09-24.5";
 
 var LAT = 51.2465;
 var LON = 22.5684;
@@ -753,6 +810,218 @@ function jsonpRequest(env, base, params, onDone) {
   env.document.body.appendChild(tag);
 }
 
+/* ---------- Kalendarz: setup ---------- */
+
+var CAL_STORAGE_KEY = "gcalUrl";   /* calendar Web App URL + key; separate from gscriptUrl */
+var CAL_MAX_ROWS = 5;              /* per day before "+N wi\u0119cej" */
+var DNI_KROTKO = ["Nd", "Pn", "Wt", "\u015ar", "Cz", "Pt", "Sb"];
+
+function getSavedCalUrl(storage) {
+  try {
+    var v = storage.getItem(CAL_STORAGE_KEY);
+    return v ? v : null;
+  } catch (e) { return null; }
+}
+
+function saveCalUrl(storage, url) {
+  try { storage.setItem(CAL_STORAGE_KEY, compactUrl(url)); return true; }
+  catch (e) { return false; }
+}
+
+function calScreen(storage) {
+  var v;
+  try { v = storage.getItem(CAL_STORAGE_KEY); }
+  catch (e) { return "storage-error"; }
+  return v && isValidExecUrl(v) ? "panel" : "setup";
+}
+
+/* ---------- Kalendarz: days and events ----------
+   Event from the script: { title, start, end, allDay, who }
+   timed "yyyy-mm-ddTHH:mm", all-day "yyyy-mm-dd" with an exclusive end.
+   Both compare correctly as plain strings. */
+
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+function isoDay(d) {
+  return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+}
+
+function dateOfIso(iso) {
+  return new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+}
+
+/* calendar arithmetic, so a 23/25-hour DST day never shifts the date */
+function addDays(iso, n) {
+  var d = dateOfIso(iso);
+  return isoDay(new Date(d.getFullYear(), d.getMonth(), d.getDate() + n));
+}
+
+function calDayHead(iso) {
+  return DNI_KROTKO[dateOfIso(iso).getDay()] + " " + iso.slice(8, 10) + "." + iso.slice(5, 7);
+}
+
+/* one event seen from one day -> a row, or null when it does not touch that day.
+   now = null for future days (nothing there is over yet). */
+function calItem(e, day, now) {
+  var next = addDays(day, 1);
+  var row = { title: String(e.title || ""), who: String(e.who || ""),
+              allDay: false, time: "", key: "", past: false };
+  if (e.allDay) {
+    if (!(e.start <= day && e.end > day)) return null;
+    row.allDay = true;
+    row.time = "ca\u0142y dzie\u0144";
+    return row;
+  }
+  var dayStart = day + "T00:00", nextStart = next + "T00:00";
+  var zeroAtStart = e.start === e.end && e.start === dayStart;
+  if (!(e.start < nextStart && (e.end > dayStart || zeroAtStart))) return null;
+  var startsHere = e.start >= dayStart;
+  var endsHere = e.end <= nextStart;
+  if (startsHere) {
+    row.time = hhmm(e.start) + "\u2013" + hhmm(e.end);
+    row.key = hhmm(e.start);
+  } else if (endsHere) {
+    row.time = "do " + hhmm(e.end);
+    row.key = "00:00";
+  } else {
+    row.allDay = true;                 /* runs through the whole day */
+    row.time = "ca\u0142y dzie\u0144";
+  }
+  if (now && !row.allDay) row.past = parseLocal(e.end).getTime() <= now.getTime();
+  return row;
+}
+
+/* all-day first, then by start; index keeps the order stable on old Safari */
+function calItems(events, day, now) {
+  var out = [], i, r;
+  for (i = 0; i < (events || []).length; i++) {
+    r = calItem(events[i], day, now);
+    if (r) { r.i = i; out.push(r); }
+  }
+  out.sort(function (a, b) {
+    if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
+    if (a.key !== b.key) return a.key < b.key ? -1 : 1;
+    return a.i - b.i;
+  });
+  return out;
+}
+
+function calToday(events, now) {
+  return calItems(events, isoDay(now), now);
+}
+
+/* lower section: starts tomorrow, mode = "tomorrow" | "3" | "5" | "7" */
+function calDays(events, now, mode) {
+  var n = mode === "tomorrow" ? 1 : Number(mode) || 1;
+  var today = isoDay(now), out = [], i, day;
+  for (i = 1; i <= n; i++) {
+    day = addDays(today, i);
+    out.push({ date: day, head: calDayHead(day), items: calItems(events, day, null) });
+  }
+  return out;
+}
+
+/* too many rows: hide struck-through ones first (oldest first), then cut from the end */
+function limitItems(items, max) {
+  if (items.length <= max) return { shown: items, hidden: 0 };
+  var drop = items.length - max, keep = [], i;
+  for (i = 0; i < items.length; i++) {
+    if (drop > 0 && items[i].past) { drop--; continue; }
+    keep.push(items[i]);
+  }
+  return { shown: keep.slice(0, max), hidden: items.length - max };
+}
+
+/* ---------- Kalendarz: state and HTML ---------- */
+
+function createCalState() {
+  return { data: null, offline: false, error: "", fetchedAt: null, expanded: {} };
+}
+
+function needsCalFetch(prevView, newView) {
+  return newView === "kalendarz" && prevView !== "kalendarz";
+}
+
+function onCalResult(cs, res, now) {
+  if (res && res.ok === true) {
+    cs.data = res.events || [];
+    cs.offline = false;
+    cs.error = "";
+    cs.fetchedAt = now;
+  } else if (res && res.ok === false) {
+    cs.error = res.error || "server";
+    cs.offline = false;
+  } else {
+    cs.offline = true;                 /* timeout / network: keep the last data */
+  }
+  return cs;
+}
+
+function calExpand(cs, day) { cs.expanded[day] = true; return cs; }
+
+/* folds back together with the rotation resuming */
+function calCollapseIfIdle(cs, state, now) {
+  if (now.getTime() >= state.pausedUntil) cs.expanded = {};
+  return cs;
+}
+
+function tagHtml(who) {
+  if (!who) return "";
+  var cls = who === "E" ? "tag-e" : who === "D" ? "tag-d" : "tag-x";
+  return '<span class="tag ' + cls + '">' + escapeHtml(who) + "</span>";
+}
+
+function evHtml(it) {
+  return '<div class="ev' + (it.past ? " past" : "") + '">' +
+    '<span class="ev-time">' + escapeHtml(it.time) + "</span>" +
+    '<span class="ev-title">' + escapeHtml(it.title) + "</span>" + tagHtml(it.who) + "</div>";
+}
+
+function calDayHtml(cs, day, items, maxRows) {
+  if (items.length === 0) return '<p class="empty">Brak wydarze\u0144</p>';
+  var lim = cs.expanded[day] ? { shown: items, hidden: 0 } : limitItems(items, maxRows);
+  var s = "", i;
+  for (i = 0; i < lim.shown.length; i++) s += evHtml(lim.shown[i]);
+  if (lim.hidden > 0) {
+    s += '<div class="more" data-calday="' + day + '">+' + lim.hidden + " wi\u0119cej</div>";
+  }
+  return s;
+}
+
+function calHtml(cs, now, mode, maxRows) {
+  var s = "", i;
+  if (cs.error === "auth") {
+    s += '<p class="msg"><b>Z\u0142y klucz</b>Skrypt kalendarza odrzuci\u0142 klucz. Sprawd\u017a adres.</p>';
+  } else if (cs.error) {
+    s += '<p class="list-note">B\u0142\u0105d skryptu kalendarza: ' + escapeHtml(cs.error) + "</p>";
+  }
+  if (cs.offline && cs.data) {
+    s += '<p class="list-note">offline \u2014 aktualizacja ' +
+      (cs.fetchedAt ? pad2(cs.fetchedAt.getHours()) + ":" + pad2(cs.fetchedAt.getMinutes()) : "?") +
+      "</p>";
+  }
+  if (!cs.data) {
+    if (!cs.error) {
+      s += cs.offline
+        ? '<p class="msg"><b>Brak po\u0142\u0105czenia z kalendarzem</b>Spr\u00f3buj\u0119 przy kolejnym wej\u015bciu.</p>'
+        : '<p class="msg">Wczytywanie\u2026</p>';
+    }
+    return s;
+  }
+  var today = isoDay(now);
+  var days = calDays(cs.data, now, mode);
+  s += '<div class="cols"><div class="col">';
+  s += '<p class="cal-head first">Dzi\u015b \u00b7 ' + calDayHead(today) + "</p>";
+  s += calDayHtml(cs, today, calToday(cs.data, now), maxRows);
+  s += '</div><div class="col">';
+  for (i = 0; i < days.length; i++) {
+    s += '<p class="cal-head' + (i === 0 ? " first" : "") + '">' +
+      (days.length === 1 ? "Jutro \u00b7 " : "") + days[i].head + "</p>";
+    s += calDayHtml(cs, days[i].date, days[i].items, maxRows);
+  }
+  return s + "</div></div>";
+}
+
 /* ---------- wiring ---------- */
 
 if (typeof document !== "undefined") {
@@ -769,6 +1038,9 @@ if (typeof document !== "undefined") {
     var lastView = null;
     var listBusy = false;
     var showSetup = false;
+    var cs = createCalState();
+    var calBusy = false;
+    var showCalSetup = false;
     var env = {
       document: document, window: window,
       setTimeout: function (f, ms) { return setTimeout(f, ms); },
@@ -890,6 +1162,62 @@ if (typeof document !== "undefined") {
       paintList();
     }
 
+    function savedCalUrl() {
+      var u = store ? getSavedCalUrl(store) : null;
+      return u && isValidExecUrl(u) ? compactUrl(u) : null;
+    }
+
+    function paintCal() {
+      var scr = store ? calScreen(store) : "storage-error";
+      if (scr === "storage-error") {
+        el("cal-setup").className = "off";
+        el("cal-bar").className = "cal-bar off";
+        el("kalendarz").innerHTML = '<p class="msg"><b>Pami\u0119\u0107 przegl\u0105darki niedost\u0119pna</b>' +
+          "Wy\u0142\u0105cz tryb prywatny w Safari.</p>";
+        return;
+      }
+      var setup = scr === "setup" || showCalSetup;
+      el("cal-setup").className = setup ? "" : "off";
+      el("cal-bar").className = setup ? "cal-bar off" : "cal-bar";
+      el("kalendarz").innerHTML = setup ? "" :
+        calHtml(cs, new Date(), el("cal-range").value, CAL_MAX_ROWS) +
+        '<p class="list-foot"><span class="link" data-act="cal-setup">zmie\u0144 adres</span></p>';
+    }
+
+    function fetchCal() {
+      var url = savedCalUrl();
+      if (!url || calBusy) { paintCal(); return; }
+      calBusy = true;
+      paintCal();
+      jsonpRequest(env, url, {}, function (res) {
+        calBusy = false;
+        onCalResult(cs, res, new Date());
+        paintCal();
+      });
+    }
+
+    function calAct(name) {
+      if (name === "cal-setup") { showCalSetup = true; }
+      if (name === "cal-clear") { el("cal-setup-url").value = ""; el("cal-setup-err").innerHTML = ""; }
+      if (name === "cal-save") {
+        var v = el("cal-setup-url").value;
+        if (!isValidExecUrl(v)) {
+          el("cal-setup-err").innerHTML = "To nie jest adres \u2026/exec?key=\u2026 \u2014 sprawd\u017a, czy skopiowa\u0142a\u015b ca\u0142o\u015b\u0107.";
+          return;
+        }
+        if (!saveCalUrl(store, v)) {
+          el("cal-setup-err").innerHTML = "Nie da si\u0119 zapisa\u0107 \u2014 wy\u0142\u0105cz tryb prywatny w Safari.";
+          return;
+        }
+        el("cal-setup-url").value = "";
+        el("cal-setup-err").innerHTML = "";
+        showCalSetup = false;
+        cs = createCalState();
+        fetchCal();
+      }
+      paintCal();
+    }
+
     /* nearest element (itself or a parent) carrying the attribute */
     function withAttr(t, name) {
       while (t && t.getAttribute) {
@@ -926,6 +1254,11 @@ if (typeof document !== "undefined") {
       if (d.view === "lista") {
         collapseIfIdle(ls, state, new Date());
         if (needsFetch(prevView, d.view)) fetchList(); else paintList();
+      }
+      if (prevView === "kalendarz" && d.view !== "kalendarz") showCalSetup = false;
+      if (d.view === "kalendarz") {
+        calCollapseIfIdle(cs, state, new Date());
+        if (needsCalFetch(prevView, d.view)) fetchCal(); else paintCal();
       }
       schedule(d);
     }
@@ -994,6 +1327,7 @@ if (typeof document !== "undefined") {
     }
 
     el("range").onchange = function () { touched(null); };
+    el("cal-range").onchange = function () { touched(null); };
 
     document.getElementById("theme").onclick = function (e) {
       theme = nextTheme(theme);
@@ -1008,7 +1342,14 @@ if (typeof document !== "undefined") {
       var a = withAttr(t, "data-act");
       var item = withAttr(t, "data-row");
       var more = withAttr(t, "data-list");
-      if (a) { touched(null); act(a.getAttribute("data-act")); return; }
+      var calMore = withAttr(t, "data-calday");
+      if (a) {
+        var name = a.getAttribute("data-act");
+        touched(null);
+        if (name.indexOf("cal-") === 0) calAct(name); else act(name);
+        return;
+      }
+      if (calMore) { calExpand(cs, calMore.getAttribute("data-calday")); touched(null); return; }
       if (item) {
         touched(null);
         tick(item.getAttribute("data-list"), Number(item.getAttribute("data-row")));
@@ -1056,7 +1397,13 @@ if (typeof module !== "undefined") {
     createListState: createListState, needsFetch: needsFetch,
     onFetchResult: onFetchResult, tickStart: tickStart, tickResult: tickResult,
     expandList: expandList, collapseIfIdle: collapseIfIdle, listsHtml: listsHtml,
-    buildJsonpUrl: buildJsonpUrl, jsonpRequest: jsonpRequest
+    buildJsonpUrl: buildJsonpUrl, jsonpRequest: jsonpRequest,
+    CAL_STORAGE_KEY: CAL_STORAGE_KEY, CAL_MAX_ROWS: CAL_MAX_ROWS,
+    getSavedCalUrl: getSavedCalUrl, saveCalUrl: saveCalUrl, calScreen: calScreen,
+    calDayHead: calDayHead, calItem: calItem, calToday: calToday, calDays: calDays,
+    limitItems: limitItems, createCalState: createCalState, needsCalFetch: needsCalFetch,
+    onCalResult: onCalResult, calExpand: calExpand, calCollapseIfIdle: calCollapseIfIdle,
+    calHtml: calHtml
   };
 }
 </script>

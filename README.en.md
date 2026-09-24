@@ -17,6 +17,7 @@ _Built with Claude (Anthropic)_
 - [Three views](#-three-views)
 - [What the weather view shows](#-what-the-weather-view-shows)
 - [Shopping/ToDo](#-shoppingtodo)
+- [Calendar](#-calendar)
 - [Night mode](#-night-mode)
 - [Light/dark theme](#️-lightdark-theme)
 - [How it works](#-how-it-works)
@@ -52,7 +53,7 @@ The panel rotates through three views (tabs) on its own:
 | View         | Time on screen | Status               |
 | ------------ | -------------- | -------------------- |
 | **Weather**  | 10 min         | ✅ working            |
-| **Calendar** | 5 min          | 🚧 placeholder       |
+| **Calendar** | 5 min          | ✅ working            |
 | **Shopping/ToDo List** | 5 min          | ✅ working            |
 
 - a full loop takes **20 minutes**
@@ -121,6 +122,41 @@ Sheet time zone: `File → Settings → (GMT+01:00) Berlin`.
 > The "zmień adres" (change address) link under the list replaces it. If the URL ever leaks: run `generateKey` again + a new deployment version.
 
 [`health-check/list.html`](https://bugitwhisperer.github.io/ipad-ios10-home-panel/health-check/list.html) — health check: can the iPad reach the Google script (the address without the key is enough; an `auth` answer also means the connection works)
+
+## 📅 Calendar
+
+Events from the panel's own Google account (`puxle.home.panel`).<br>
+Only events that account is **invited** to reach the panel — the iPad only displays.
+
+| What                 | How                                                                  |
+| -------------------- | -------------------------------------------------------------------- |
+| **Left column**      | Today — finished events stay **struck through** until midnight        |
+| **Right column**     | dropdown `Jutro / 3 / 5 / 7 dni` (tomorrow / days), starting tomorrow |
+| **Who**              | tag by creator: **E** green, **D** blue, anyone else — login before `@` |
+| **All-day**          | on top of the day as "cały dzień" (all day)                           |
+| **Past midnight**    | on both days, the second one as "do 02:00" (until 02:00)              |
+| **Many events**      | 5 per day, then `+N więcej` — struck-through ones are hidden first    |
+| **Long title**       | wraps, nothing is cut off                                             |
+| **Fetching**         | when the view opens, 8 days at once; the dropdown filters locally     |
+| **No network**       | last data stays, marked `offline — aktualizacja HH:MM`                |
+
+### Panel account
+
+`Settings → Event settings → Add invitations to my calendar → Only if the sender is known`,
+with E's and D's addresses added to the panel account's contacts. Time zone: Warsaw.
+
+### Google script (`apps-script/Calendar.gs`)
+
+A separate project on the panel account — it can only see the panel's calendar.
+
+1. Signed in as the panel account: [script.google.com](https://script.google.com) → `New project`, paste the whole of `apps-script/Calendar.gs`
+2. `Project Settings` → time zone `(GMT+01:00) Warsaw`
+3. `Project Settings → Script Properties`: `EMAIL_E` = E's address, `EMAIL_D` = D's address (never in the repo)
+4. Run `generateKey`, allow calendar access, copy the key from the log
+5. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone**
+6. On the iPad, in the Kalendarz tab: paste `https://script.google.com/macros/s/…/exec?key=KEY` → `Zapisz`
+
+> 🔐 The calendar address has its own storage slot on the iPad (`gcalUrl`) — it never overwrites the list address.
 
 ---
 
@@ -254,6 +290,7 @@ From the repo root, Node 22+. No network, no Google account, no browser — deta
 | ---------------------------------- | ----- | ------------------------------------------------------ |
 | `tests/test-panel.js`              | 56    | rotation, night mode, weather, theme, iOS 10 compatibility |
 | `tests/test-todo-shopping-list.js` | 36    | Google script, list view, JSONP, layout on iOS 10      |
+| `tests/test-calendar.js`           | 33    | calendar script, calendar view, DST                    |
 
 ---
 
@@ -264,7 +301,7 @@ From the repo root, Node 22+. No network, no Google account, no browser — deta
 | **1** | Weather + forecast          | ✅ Done      | —                                                            |
 | **A** | View rotation + night mode  | ✅ Done      | —                                                            |
 | **—** | Light/dark theme            | ✅ Done      | —                                                            |
-| **B** | Calendar                    | 📋 Planned  | a dedicated Google account invited to shared events          |
+| **B** | Calendar                    | ✅ Done      | own Google account + separate Apps Script, JSONP, key only on the iPad |
 | **C** | Shopping/ToDo               | ✅ Done      | Google Sheet + Apps Script, JSONP, key stored only on the iPad |
 | **2** | Rain radar                  | 📋 Planned  | RainViewer or IMGW; needs a map library, uncertain on iOS 10 |
 | **3** | City search                 | 🅿️ Parked   | text field + Open-Meteo geocoding API                        |

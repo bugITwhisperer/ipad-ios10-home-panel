@@ -8,8 +8,8 @@ Z głównego folderu repo, jedną komendą (Node 22+):
 node --test
 ```
 
-Uruchamia oba zestawy: `tests/test-todo-shopping-list.js` (30 testów, etap C) i
-`tests/test-panel.js` (54 testy, panel). Każdy można też puścić osobno:
+Uruchamia wszystkie zestawy: `tests/test-todo-shopping-list.js` (etap C),
+`tests/test-calendar.js` (33 testy, kalendarz) i `tests/test-panel.js` (panel). Każdy można też puścić osobno:
 
 ```bash
 node tests/test-panel.js     # czytelny wydruk PASS/FAIL
@@ -50,6 +50,8 @@ po nim poznasz, czy iPad wczytał już nową wersję.
 | `test-panel.js`         | testy panelu: rotacja, noc, pogoda, motyw                   |
 | `fixtures.js`           | generator sztucznych odpowiedzi Open-Meteo                  |
 | `test-todo-shopping-list.js`     | testy etapu C: skrypt Google + widok Zakupy/ToDo + JSONP    |
+| `test-calendar.js`      | testy kalendarza: skrypt `Calendar.gs` + widok kalendarza   |
+| `../apps-script/Calendar.gs` | backend kalendarza — osobny projekt na koncie panelu  |
 | `helpers.js`            | ładuje `index.html` i `Code.gs` do testów bez przeglądarki  |
 | `layout-check.js`       | opcjonalny test układu w przeglądarce (`npm run layout`)    |
 
@@ -77,6 +79,8 @@ Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 | **17** | jasny motyw — jasność tła, kontrast tekstów, niebieskie kafelki pogody |
 | **A**  | etap C, skrypt Google — odczyt list, północ, klucz, odhaczanie |
 | **B**  | etap C, iPad — konfiguracja, lista, offline, JSONP, XSS        |
+| **A0–A23** | kalendarz, skrypt — klucz, zakres 8 dni, E/D/login, brak maili, zmiana czasu |
+| **B7–B29** | kalendarz, iPad — przekreślanie, dropdown, całodniowe, przez północ, +N, XSS, offline |
 | **R**  | regresja — logika pogody i przeładowanie o 4:00              |
 
 ## Co wyłapały

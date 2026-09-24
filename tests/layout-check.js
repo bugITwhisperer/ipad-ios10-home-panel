@@ -24,6 +24,20 @@ var LIST = { ok: true,
   todo: [{ row: 4, text: "zdecydować się na pakiet medyczny i porównać oferty trzech firm przed końcem miesiąca", done: false },
          { row: 5, text: "krótkie", done: true }] };
 
+
+/* calendar fixture: today 2026-09-23 (Wed), clock 12:00 */
+var CAL = { ok: true, events: [
+  { title: "Śniadanie z rodzicami", start: "2026-09-23T09:00", end: "2026-09-23T10:30", allDay: false, who: "E" },
+  { title: "Urodziny Kasi", start: "2026-09-23", end: "2026-09-24", allDay: true, who: "D" },
+  { title: "Weterynarz — szczepienie Puzzel i przegląd zębów, zabrać książeczkę zdrowia", start: "2026-09-23T11:30", end: "2026-09-23T12:30", allDay: false, who: "E" },
+  { title: "Kino", start: "2026-09-23T19:00", end: "2026-09-23T21:30", allDay: false, who: "jan.kowalski" },
+  { title: "Impreza u Kasi", start: "2026-09-24T22:00", end: "2026-09-25T02:00", allDay: false, who: "D" },
+  { title: "Zakupy na tydzień", start: "2026-09-24T10:00", end: "2026-09-24T11:00", allDay: false, who: "E" },
+  { title: "Wyjazd w góry", start: "2026-09-26", end: "2026-09-29", allDay: true, who: "D" },
+  { title: "Dentysta", start: "2026-09-29T08:00", end: "2026-09-29T09:00", allDay: false, who: "E" },
+  { title: "Spotkanie", start: "2026-09-30T17:00", end: "2026-09-30T18:00", allDay: false, who: "D" }
+] };
+
 var failures = 0;
 function report(name, bottom, extra) {
   var ok = bottom <= H - MIN_GAP && !extra;
@@ -46,12 +60,15 @@ function report(name, bottom, extra) {
           body: JSON.stringify(fx.make({ date: "2026-09-23", sunrise: "06:35", sunset: "18:45" })) });
       });
       await page.route("https://script.google.com/**", function (r) {
-        var cb = new URL(r.request().url()).searchParams.get("callback");
-        r.fulfill({ contentType: "application/javascript", body: cb + "(" + JSON.stringify(LIST) + ")" });
+        var u = new URL(r.request().url());
+        var cb = u.searchParams.get("callback");
+        var data = u.pathname.indexOf("AKcalcheck") > -1 ? CAL : LIST;
+        r.fulfill({ contentType: "application/javascript", body: cb + "(" + JSON.stringify(data) + ")" });
       });
       await page.addInitScript(function (th) {
         localStorage.setItem("panel-theme", th);
         localStorage.setItem("gscriptUrl", "https://script.google.com/macros/s/AKlayoutcheck/exec?key=test");
+        localStorage.setItem("gcalUrl", "https://script.google.com/macros/s/AKcalcheck/exec?key=test");
       }, theme);
       await page.goto(PAGE);
       await page.waitForTimeout(300);
@@ -78,6 +95,25 @@ function report(name, bottom, extra) {
         return { bottom: Math.round(bottom), wide: wide };
       }, W);
       report("lista", list.bottom, list.wide ? list.wide + " kafelkow wychodzi za prawa krawedz" : "");
+
+      await page.click('.tab[data-view="kalendarz"]');
+      await page.waitForSelector(".ev");
+      for (var cm = 0; cm < modes.length; cm++) {
+        await page.selectOption("#cal-range", modes[cm]);
+        await page.waitForTimeout(100);
+        var cal = await page.evaluate(function (w) {
+          var bottom = 0, wide = 0;
+          var els = document.querySelectorAll("#view-kalendarz .col, #view-kalendarz .list-foot");
+          for (var i = 0; i < els.length; i++) {
+            var r = els[i].getBoundingClientRect();
+            if (r.bottom > bottom) bottom = r.bottom;
+            if (r.right > w) wide++;
+          }
+          return { bottom: Math.round(bottom), wide: wide };
+        }, W);
+        report("kalendarz / " + modes[cm], cal.bottom, cal.wide ? cal.wide + " elementow wychodzi za prawa krawedz" : "");
+        if (process.env.SHOTS) await page.screenshot({ path: process.env.SHOTS + "/kalendarz-" + theme + "-" + modes[cm] + ".png" });
+      }
 
       if (errors.length) { failures++; console.log("  FAIL  bledy strony: " + errors.join(" | ")); }
       await page.close();
