@@ -138,7 +138,8 @@ select.off { display: none; }
   background-color: #1d2735; border-radius: 7px; border-top: 2px solid #ffc46b;
 }
 
-/* ---------- light theme: dimmed grey, easy on an old LCD in a room ---------- */
+/* ---------- light theme: dimmed grey, easy on an old LCD in a room;
+   weather tiles steel blue so the white cloud icons stay visible ---------- */
 body.light { background-color: #b4bbc4; color: #1f2a37; }
 body.light .place { color: #475567; }
 body.light .stamp { color: #56647a; }
@@ -149,13 +150,13 @@ body.light .now-temp { color: #a0620a; }
 body.light .now-text { color: #2e3b4b; }
 body.light .now-text span { color: #4d5b6c; }
 body.light .strip-head { color: #4d5b6c; }
-body.light .cell { background-color: #c8ced6; border-top-color: #939eab; }
-body.light .cell.edge { border-top-color: #a0620a; }
-body.light .c-when { color: #435164; }
-body.light .c-temp { color: #a0620a; }
-body.light .c-lo { color: #56647a; }
-body.light .c-rain { color: #165a8f; }
-body.light .c-wind { color: #435164; }
+body.light .cell { background-color: #8ea6bf; border-top-color: #5d7894; }
+body.light .cell.edge { border-top-color: #5a2f00; }
+body.light .c-when { color: #1b2735; }
+body.light .c-temp { color: #5a2f00; }
+body.light .c-lo { color: #2e3b4b; }
+body.light .c-rain { color: #0d3e66; }
+body.light .c-wind { color: #1b2735; }
 body.light .stub { color: #435164; }
 body.light .stub b { color: #1f2a37; }
 body.light .msg { color: #3a4859; }
@@ -249,7 +250,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-09-24.3";
+var APP_VERSION = "2026-09-24.4";
 
 var LAT = 51.2465;
 var LON = 22.5684;

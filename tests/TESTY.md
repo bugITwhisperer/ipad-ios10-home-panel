@@ -74,7 +74,7 @@ Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 | **14** | kafelki — min. temperatura tylko w dziennych, `--` gdy brak     |
 | **15** | rotacja w czasie — termin zmiany, pauza po dotyku, noc, ręczna zmiana |
 | **16** | znacznik wersji — format, wpis na stronie, miejsce i kolory      |
-| **17** | jasny motyw przyciemniony — jasność tła, kontrast tekstów        |
+| **17** | jasny motyw — jasność tła, kontrast tekstów, niebieskie kafelki pogody |
 | **A**  | etap C, skrypt Google — odczyt list, północ, klucz, odhaczanie |
 | **B**  | etap C, iPad — konfiguracja, lista, offline, JSONP, XSS        |
 | **R**  | regresja — logika pogody i przeładowanie o 4:00              |

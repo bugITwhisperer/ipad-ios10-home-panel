@@ -784,5 +784,82 @@ t("RT5", "reczne przelaczenie zakladki: nowy widok dostaje pelny czas po pauzie"
   eq(seen[10], "kalendarz", "12:13 - pauza 12:08 + 5 min");
 });
 
+console.log("\nGRUPA 16 - znacznik wersji");
+
+t("V1", "APP_VERSION istnieje i ma format RRRR-MM-DD.N", function () {
+  ok(typeof app.APP_VERSION === "string", "APP_VERSION wyeksportowane");
+  ok(/^\d{4}-\d{2}-\d{2}\.\d+$/.test(app.APP_VERSION), "format, got " + app.APP_VERSION);
+});
+
+t("V2", "strona ma #ver i wpisuje do niego APP_VERSION", function () {
+  ok(/<div id="ver"><\/div>/.test(HTML), "pusty kontener #ver w HTML");
+  ok(/el\("ver"\)\.innerHTML = "v " \+ APP_VERSION/.test(SRC), "wiring wpisuje wersje");
+});
+
+t("V3", "#ver w prawym dolnym rogu, mala czcionka, kolor w obu motywach", function () {
+  var css = HTML.match(/<style>([\s\S]*?)<\/style>/)[1];
+  var r = css.match(/\n#ver \{([^}]*)\}/);
+  ok(r, "regula #ver");
+  ok(/position: absolute/.test(r[1]) && /right: \d+px/.test(r[1]) && /bottom: \d+px/.test(r[1]), "prawy dolny rog");
+  var fs = r[1].match(/font-size: (\d+)px/);
+  ok(fs && Number(fs[1]) <= 13, "mala czcionka");
+  ok(/color: #/.test(r[1]), "kolor w ciemnym");
+  ok(/body\.light #ver \{[^}]*color: #/.test(css), "kolor w jasnym");
+  ok(HTML.indexOf('id="ver"') > -1 && HTML.indexOf('id="ver"') < HTML.indexOf('id="night"'),
+     "#ver przed nakladka nocna w DOM - noc go przykrywa");
+});
+
+console.log("\nGRUPA 17 - jasny motyw przyciemniony");
+
+function lumOf(h) {
+  return 0.299 * parseInt(h.slice(1, 3), 16) + 0.587 * parseInt(h.slice(3, 5), 16) +
+         0.114 * parseInt(h.slice(5, 7), 16);
+}
+function lightRule(css, sel) {
+  var esc = sel.replace(/[.*+?^${}()|[\]\\#]/g, "\\$&");
+  var m = css.match(new RegExp("body\\.light " + esc + " \\{([^}]*)\\}"));
+  return m ? m[1] : "";
+}
+
+t("L1", "tlo jasnego motywu przyciemnione (nie razi na scianie)", function () {
+  var css = HTML.match(/<style>([\s\S]*?)<\/style>/)[1];
+  var bg = css.match(/body\.light \{ background-color: (#[0-9a-f]{6});/)[1];
+  var tile = lightRule(css, ".cell").match(/background-color: (#[0-9a-f]{6})/)[1];
+  ok(lumOf(bg) <= 195, "tlo za jasne, lum " + Math.round(lumOf(bg)));
+  ok(lumOf(tile) <= 210, "kafelek za jasny, lum " + Math.round(lumOf(tile)));
+});
+
+t("L2", "teksty drugoplanowe czytelne na swoim tle", function () {
+  var css = HTML.match(/<style>([\s\S]*?)<\/style>/)[1];
+  function bgOf(sel) { return lumOf(lightRule(css, sel).match(/background-color: (#[0-9a-f]{6})/)[1]); }
+  var body = lumOf(css.match(/body\.light \{ background-color: (#[0-9a-f]{6});/)[1]);
+  var checks = [
+    [".c-when", bgOf(".cell")], [".c-lo", bgOf(".cell")], [".c-wind", bgOf(".cell")],
+    [".item.done", bgOf(".item")],
+    [".strip-head", body], [".stamp", body], [".empty", body], [".col-head", body], ["#ver", body]
+  ];
+  checks.forEach(function (c) {
+    var col = lightRule(css, c[0]).match(/(?:^|[ ;])color: (#[0-9a-f]{6})/);
+    ok(col, "kolor dla " + c[0]);
+    ok(Math.abs(c[1] - lumOf(col[1])) >= 60, c[0] + " za malo kontrastu: " + Math.round(Math.abs(c[1] - lumOf(col[1]))));
+  });
+});
+
+t("L3", "kafelki pogody w jasnym motywie: stalowoniebieskie, biale chmurki widoczne", function () {
+  var css = HTML.match(/<style>([\s\S]*?)<\/style>/)[1];
+  var hex = lightRule(css, ".cell").match(/background-color: (#[0-9a-f]{6})/)[1];
+  var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  ok(b > r + 30, "odcien niebieski, got " + hex);
+  ok(255 - lumOf(hex) >= 80, "biel (chmurki) odcina sie od kafelka, roznica " + Math.round(255 - lumOf(hex)));
+  var body = css.match(/body\.light \{ background-color: (#[0-9a-f]{6});/)[1];
+  ok(Math.abs(lumOf(body) - lumOf(hex)) >= 15, "kafelek odrozniony od tla");
+});
+
+t("V5", "znacznik wersji mniejszy niz 11 px", function () {
+  var css = HTML.match(/<style>([\s\S]*?)<\/style>/)[1];
+  var fs = css.match(/\n#ver \{[^}]*font-size: (\d+)px/);
+  ok(fs && Number(fs[1]) <= 9, "font-size #ver, got " + (fs && fs[1]));
+});
+
 console.log("\n" + pass + " passed, " + fail + " failed, " + todo + " todo\n");
 process.exit(fail ? 1 : 0);
