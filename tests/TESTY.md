@@ -19,7 +19,8 @@ node --test tests/test-todo-shopping-list.js
 ### Opcjonalnie: czy widoki mieszczą się na ekranie iPada
 
 Osobny test w prawdziwej przeglądarce (Chromium, 1024×768, oba motywy, wszystkie tryby
-dolnego paska pogody i lista). Nie wchodzi do `node --test`.
+dolnego paska pogody i lista) oraz czy strona sama przełącza widoki w 25 symulowanych
+minutach. Nie wchodzi do `node --test`.
 
 ```bash
 npm install                        # raz: instaluje Playwright (tylko do testów)
@@ -65,6 +66,7 @@ Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 | **12** | motyw jasny/ciemny — przełączanie, zapis, noc, kontrast        |
 | **13** | błąd pobierania pogody — istniejące elementy, jedna ponowna próba |
 | **14** | kafelki — min. temperatura tylko w dziennych, `--` gdy brak     |
+| **15** | rotacja w czasie — termin zmiany, pauza po dotyku, noc, ręczna zmiana |
 | **A**  | etap C, skrypt Google — odczyt list, północ, klucz, odhaczanie |
 | **B**  | etap C, iPad — konfiguracja, lista, offline, JSONP, XSS        |
 | **R**  | regresja — logika pogody i przeładowanie o 4:00              |

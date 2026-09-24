@@ -1,4 +1,5 @@
 /* S4 - does every view fit the iPad screen (1024x768, landscape)?
+   RT6 - does the real page rotate views on its own?
    Optional, runs a real browser. Not part of `node --test`.
 
    One-time setup (repo root):   npm install
@@ -81,6 +82,27 @@ function report(name, bottom, extra) {
       if (errors.length) { failures++; console.log("  FAIL  bledy strony: " + errors.join(" | ")); }
       await page.close();
     }
+    /* RT6 - real page, simulated clock: all three views must come up in 25 min */
+    console.log("\nrotacja (25 symulowanych minut)");
+    var rp = await browser.newPage({ viewport: { width: W, height: H } });
+    await rp.clock.install({ time: new Date("2026-09-23T12:00:00+02:00") });
+    await rp.route("https://api.open-meteo.com/**", function (r) {
+      r.fulfill({ contentType: "application/json",
+        body: JSON.stringify(fx.make({ date: "2026-09-23", sunrise: "06:35", sunset: "18:45" })) });
+    });
+    await rp.goto(PAGE);
+    await rp.waitForTimeout(300);
+    var seen = {}, order = [];
+    for (var min = 0; min <= 25; min++) {
+      var v = await rp.$eval(".tab.on", function (e) { return e.textContent; });
+      if (!Object.prototype.hasOwnProperty.call(seen, v)) { seen[v] = min; order.push(v + "@" + min); }
+      await rp.clock.runFor(60000);
+      await rp.waitForTimeout(20);
+    }
+    var all = Object.keys(seen).length === 3;
+    if (!all) failures++;
+    console.log("  " + (all ? "PASS" : "FAIL") + "  widoki: " + order.join(", "));
+    await rp.close();
   } finally {
     await browser.close();
   }

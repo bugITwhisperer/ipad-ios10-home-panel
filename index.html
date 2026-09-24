@@ -450,7 +450,7 @@ function bodyClass(theme, dark) {
 /* ---------- state machine ---------- */
 
 function createState() {
-  return { viewIndex: 0, pausedUntil: 0, wakeUntil: 0 };
+  return { viewIndex: 0, pausedUntil: 0, wakeUntil: 0, switchAt: 0 };
 }
 
 function currentView(state) { return VIEWS[state.viewIndex].id; }
@@ -470,6 +470,21 @@ function decide(state, now, sunriseIso) {
   }
   var paused = ms < state.pausedUntil;
   return { view: currentView(state), dark: false, rotating: !paused, night: false };
+}
+
+/* the ONLY place a view changes on its own. The deadline is set once, when a view
+   starts running, and never pushed back by the minute refresh - that was the bug:
+   re-arming a full 10-min timer every minute meant it never fired.
+   Paused or night -> no deadline; when rotation resumes the view gets its full time.
+   Returns true when the view changed. */
+function rotate(state, now, rotating) {
+  var ms = now.getTime();
+  if (!rotating) { state.switchAt = 0; return false; }
+  if (!state.switchAt) { state.switchAt = ms + VIEWS[state.viewIndex].ms; return false; }
+  if (ms < state.switchAt) return false;
+  advance(state);
+  state.switchAt = ms + VIEWS[state.viewIndex].ms;
+  return true;
 }
 
 function onTouch(state, now, sunriseIso) {
@@ -873,7 +888,10 @@ if (typeof document !== "undefined") {
 
     /* every render replaces innerHTML; nothing is ever appended */
     function apply() {
-      var d = decide(state, new Date(), sunriseIso());
+      var now = new Date();
+      var d0 = decide(state, now, sunriseIso());
+      rotate(state, now, d0.rotating);
+      var d = decide(state, now, sunriseIso());
       var i;
       for (i = 0; i < VIEWS.length; i++) {
         el("view-" + VIEWS[i].id).className = "view" + (VIEWS[i].id === d.view ? " on" : "");
@@ -899,13 +917,12 @@ if (typeof document !== "undefined") {
       schedule(d);
     }
 
+    /* aims one timer at the fixed deadline; re-arming it never moves the deadline */
     function schedule(d) {
       if (rotTimer) { clearTimeout(rotTimer); rotTimer = null; }
-      if (!d.rotating) return;
-      rotTimer = setTimeout(function () {
-        advance(state);
-        apply();
-      }, VIEWS[state.viewIndex].ms);
+      if (!d.rotating || !state.switchAt) return;
+      rotTimer = setTimeout(function () { apply(); },
+        Math.max(0, state.switchAt - new Date().getTime()) + 50);
     }
 
     /* one timer re-armed, never stacked */
@@ -1012,7 +1029,7 @@ if (typeof module !== "undefined") {
     msUntil4am: msUntil4am,
     cellHtml: cellHtml, nowHtml: nowHtml, dayLabel: dayLabel,
     VIEWS: VIEWS, PAUSE_MS: PAUSE_MS, WAKE_MS: WAKE_MS,
-    createState: createState, currentView: currentView, advance: advance,
+    createState: createState, currentView: currentView, advance: advance, rotate: rotate,
     decide: decide, onTouch: onTouch, onManualSwitch: onManualSwitch,
     themeIcon: themeIcon, nextTheme: nextTheme, readTheme: readTheme,
     saveTheme: saveTheme, bodyClass: bodyClass, THEMES: THEMES,

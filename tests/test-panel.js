@@ -719,5 +719,70 @@ t("S3", "brak min. temperatury w dniu -> '--', wiersz zostaje (rowna wysokosc ka
   ok(html.indexOf("NaN") === -1 && html.indexOf("null") === -1, "bez NaN/null");
 });
 
+console.log("\nGRUPA 15 - automatyczna rotacja w czasie");
+
+/* simulates the page: the minute refresh calls rotate() every 60 s */
+function runMinutes(s, start, minutes, sun, onMinute) {
+  var MIN = 60000, t, now, d, seen = [];
+  for (t = 0; t <= minutes; t++) {
+    now = new Date(start.getTime() + t * MIN);
+    d = app.decide(s, now, sun);
+    app.rotate(s, now, d.rotating);
+    seen.push(app.currentView(s));
+    if (onMinute) onMinute(t, now);
+  }
+  return seen;
+}
+
+t("RT1", "minutowe odswiezanie: pogoda 10 min -> lista 5 -> kalendarz 5 -> pogoda", function () {
+  var s = app.createState();
+  var seen = runMinutes(s, at(2026, 9, 24, 12, 0), 30, SUN_MID);
+  eq(seen[0], "pogoda", "start");
+  eq(seen[9], "pogoda", "9. minuta");
+  eq(seen[10], "lista", "10. minuta");
+  eq(seen[14], "lista", "14. minuta");
+  eq(seen[15], "kalendarz", "15. minuta");
+  eq(seen[20], "pogoda", "20. minuta - pelna petla");
+  eq(seen[30], "lista", "30. minuta");
+});
+
+t("RT2", "odswiezanie co minute nie przesuwa terminu zmiany", function () {
+  var s = app.createState(), first = null;
+  runMinutes(s, at(2026, 9, 24, 12, 0), 9, SUN_MID, function (m) {
+    if (m === 0) first = s.switchAt;
+    eq(s.switchAt, first, "termin w minucie " + m);
+  });
+  eq(first, at(2026, 9, 24, 12, 10).getTime(), "termin = start + 10 min");
+});
+
+t("RT3", "dotkniecie: 5 min pauzy bez zmiany, potem pelny czas widoku", function () {
+  var s = app.createState(), t0 = at(2026, 9, 24, 12, 0);
+  runMinutes(s, t0, 8, SUN_MID);                     /* 8 min on weather */
+  app.onTouch(s, at(2026, 9, 24, 12, 8), SUN_MID);   /* pause until 12:13 */
+  var seen = runMinutes(s, at(2026, 9, 24, 12, 8), 20, SUN_MID);
+  eq(seen[4], "pogoda", "12:12 - pauza trwa");
+  eq(seen[14], "pogoda", "12:22 - 9 min pelnego czasu po pauzie");
+  eq(seen[15], "lista", "12:23 - pauza 12:13 + 10 min");
+});
+
+t("RT4", "noc: rotacja stoi, po swicie rusza od pelnego czasu", function () {
+  var s = app.createState();
+  var seen = runMinutes(s, at(2026, 9, 24, 0, 20), 400, SUN_MID);  /* 00:20 -> 07:00 */
+  /* 00:20-00:29 rotating (10 min, not yet due), 00:30-06:29 dark, dawn 06:30 */
+  for (var m = 10; m < 370; m++) eq(seen[m], seen[10], "w nocy bez zmian, minuta " + m);
+  eq(seen[379], seen[370], "06:39 - po swicie jeszcze ten sam widok");
+  ok(seen[380] !== seen[370], "06:40 - pelne 10 min po swicie, zmiana");
+});
+
+t("RT5", "reczne przelaczenie zakladki: nowy widok dostaje pelny czas po pauzie", function () {
+  var s = app.createState(), t0 = at(2026, 9, 24, 12, 0);
+  runMinutes(s, t0, 3, SUN_MID);
+  app.onManualSwitch(s, at(2026, 9, 24, 12, 3), SUN_MID);         /* -> lista, pause to 12:08 */
+  eq(app.currentView(s), "lista");
+  var seen = runMinutes(s, at(2026, 9, 24, 12, 3), 12, SUN_MID);
+  eq(seen[9], "lista", "12:12 - 4 min po pauzie");
+  eq(seen[10], "kalendarz", "12:13 - pauza 12:08 + 5 min");
+});
+
 console.log("\n" + pass + " passed, " + fail + " failed, " + todo + " todo\n");
 process.exit(fail ? 1 : 0);
