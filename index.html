@@ -138,41 +138,41 @@ select.off { display: none; }
   background-color: #1d2735; border-radius: 7px; border-top: 2px solid #ffc46b;
 }
 
-/* ---------- light theme: grey, easier on an old LCD than white ---------- */
-body.light { background-color: #d9dde2; color: #23303f; }
-body.light .place { color: #5a6b7e; }
-body.light .stamp { color: #7d8b9a; }
-body.light .tab { background-color: #c8ced6; color: #5a6b7e; border-top-color: #b0b9c4; }
-body.light .tab.on { background-color: #eceef1; color: #23303f; border-top-color: #b8720f; }
-body.light select { background-color: #c8ced6; color: #23303f; border-color: #aab3bf; }
-body.light .now-temp { color: #b8720f; }
-body.light .now-text { color: #3d4d5e; }
-body.light .now-text span { color: #6b7a8a; }
-body.light .strip-head { color: #6b7a8a; }
-body.light .cell { background-color: #eceef1; border-top-color: #b0b9c4; }
-body.light .cell.edge { border-top-color: #b8720f; }
-body.light .c-when { color: #5a6b7e; }
-body.light .c-temp { color: #b8720f; }
-body.light .c-lo { color: #7d8b9a; }
-body.light .c-rain { color: #1c6ba8; }
-body.light .c-wind { color: #5a6b7e; }
-body.light .stub { color: #5a6b7e; }
-body.light .stub b { color: #23303f; }
-body.light .msg { color: #4a5a6b; }
-body.light .msg b { color: #23303f; }
-body.light #mini { color: #3d4d5e; }
-body.light #mini b { color: #b8720f; }
-body.light #mini u { color: #6b7a8a; }
-body.light .col-head { color: #6b7a8a; }
-body.light .item { background-color: #eceef1; color: #23303f; border-left-color: #b0b9c4; }
-body.light .item.done { color: #8a96a3; border-left-color: #b8720f; }
-body.light .more { color: #b8720f; }
-body.light .empty { color: #7d8b9a; }
-body.light .list-note { color: #9a5a00; }
-body.light .link { color: #6b7a8a; }
-body.light #setup input { background-color: #eceef1; color: #23303f; border-color: #aab3bf; }
-body.light .btn { background-color: #c8ced6; color: #23303f; border-top-color: #b8720f; }
-body.light #theme { background-color: #c8ced6; border-top-color: #b0b9c4; }
+/* ---------- light theme: dimmed grey, easy on an old LCD in a room ---------- */
+body.light { background-color: #b4bbc4; color: #1f2a37; }
+body.light .place { color: #475567; }
+body.light .stamp { color: #56647a; }
+body.light .tab { background-color: #a6afba; color: #3f4d5e; border-top-color: #939eab; }
+body.light .tab.on { background-color: #c8ced6; color: #1f2a37; border-top-color: #a0620a; }
+body.light select { background-color: #a6afba; color: #1f2a37; border-color: #8e99a6; }
+body.light .now-temp { color: #a0620a; }
+body.light .now-text { color: #2e3b4b; }
+body.light .now-text span { color: #4d5b6c; }
+body.light .strip-head { color: #4d5b6c; }
+body.light .cell { background-color: #c8ced6; border-top-color: #939eab; }
+body.light .cell.edge { border-top-color: #a0620a; }
+body.light .c-when { color: #435164; }
+body.light .c-temp { color: #a0620a; }
+body.light .c-lo { color: #56647a; }
+body.light .c-rain { color: #165a8f; }
+body.light .c-wind { color: #435164; }
+body.light .stub { color: #435164; }
+body.light .stub b { color: #1f2a37; }
+body.light .msg { color: #3a4859; }
+body.light .msg b { color: #1f2a37; }
+body.light #mini { color: #2e3b4b; }
+body.light #mini b { color: #a0620a; }
+body.light #mini u { color: #4d5b6c; }
+body.light .col-head { color: #4d5b6c; }
+body.light .item { background-color: #c8ced6; color: #1f2a37; border-left-color: #939eab; }
+body.light .item.done { color: #5f6c7c; border-left-color: #a0620a; }
+body.light .more { color: #a0620a; }
+body.light .empty { color: #56647a; }
+body.light .list-note { color: #8a4f00; }
+body.light .link { color: #4d5b6c; }
+body.light #setup input { background-color: #c8ced6; color: #1f2a37; border-color: #8e99a6; }
+body.light .btn { background-color: #a6afba; color: #1f2a37; border-top-color: #a0620a; }
+body.light #theme { background-color: #a6afba; border-top-color: #939eab; }
 
 /* ---------- theme toggle ---------- */
 #theme {
@@ -181,6 +181,13 @@ body.light #theme { background-color: #c8ced6; border-top-color: #b0b9c4; }
   background-color: #17202c; border-radius: 7px;
   border-top: 2px solid #2b3a4d;
 }
+
+/* ---------- version label (which build is the iPad running?) ---------- */
+#ver {
+  position: absolute; right: 12px; bottom: 4px;
+  font-size: 9px; color: #3d4d5e; letter-spacing: 0.04em;
+}
+body.light #ver { color: #5f6c7c; }
 
 /* ---------- night ---------- */
 #night {
@@ -236,9 +243,14 @@ body.light #theme { background-color: #c8ced6; border-top-color: #b0b9c4; }
   </div>
 </div>
 
+<div id="ver"></div>
 <div id="night"></div>
 
 <script>
+/* bump on every deploy: date of the change + running number that day.
+   Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
+var APP_VERSION = "2026-09-24.3";
+
 var LAT = 51.2465;
 var LON = 22.5684;
 
@@ -1017,6 +1029,7 @@ if (typeof document !== "undefined") {
       location.replace(base + "?v=" + new Date().getTime());
     }, msUntil4am(new Date()));
 
+    el("ver").innerHTML = "v " + APP_VERSION;
     apply();
     load();
   })();
@@ -1024,6 +1037,7 @@ if (typeof document !== "undefined") {
 
 if (typeof module !== "undefined") {
   module.exports = {
+    APP_VERSION: APP_VERSION,
     wmo: wmo, buildDaily: buildDaily,
     buildToday: buildToday, buildTomorrow: buildTomorrow, hourCell: hourCell,
     msUntil4am: msUntil4am,

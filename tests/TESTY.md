@@ -20,7 +20,7 @@ node --test tests/test-todo-shopping-list.js
 
 Osobny test w prawdziwej przeglądarce (Chromium, 1024×768, oba motywy, wszystkie tryby
 dolnego paska pogody i lista) oraz czy strona sama przełącza widoki w 25 symulowanych
-minutach. Nie wchodzi do `node --test`.
+minutach i czy znacznik wersji nie zasłania treści. Nie wchodzi do `node --test`.
 
 ```bash
 npm install                        # raz: instaluje Playwright (tylko do testów)
@@ -34,6 +34,12 @@ ostatecznym sprawdzeniem zostaje iPad.
 Strefa `Europe/Warsaw` jest ustawiana w samych plikach testów, więc nie trzeba
 już podawać `TZ=` ani generować `panel-app.js` — testy czytają `index.html`
 bezpośrednio.
+
+## Przed każdym wdrożeniem
+
+Podbij `APP_VERSION` na górze skryptu w `index.html` (data + numer kolejny danego dnia,
+np. `2026-09-24.2` → `2026-09-24.3`). Ten napis widać w prawym dolnym rogu iPada —
+po nim poznasz, czy iPad wczytał już nową wersję.
 
 ## Pliki
 
@@ -67,6 +73,8 @@ Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 | **13** | błąd pobierania pogody — istniejące elementy, jedna ponowna próba |
 | **14** | kafelki — min. temperatura tylko w dziennych, `--` gdy brak     |
 | **15** | rotacja w czasie — termin zmiany, pauza po dotyku, noc, ręczna zmiana |
+| **16** | znacznik wersji — format, wpis na stronie, miejsce i kolory      |
+| **17** | jasny motyw przyciemniony — jasność tła, kontrast tekstów        |
 | **A**  | etap C, skrypt Google — odczyt list, północ, klucz, odhaczanie |
 | **B**  | etap C, iPad — konfiguracja, lista, offline, JSONP, XSS        |
 | **R**  | regresja — logika pogody i przeładowanie o 4:00              |
