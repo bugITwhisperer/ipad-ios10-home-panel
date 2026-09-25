@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Test NoSleep</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #1b2430; color: #e8eef5;
+    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  .wrap { padding: 24px 32px; }
+  h1 { font-size: 28px; font-weight: 600; margin: 0 0 20px 0; }
+  .row { font-size: 26px; margin: 10px 0; }
+  .row b { font-weight: 600; }
+  .ok { color: #7fd48a; }
+  .bad { color: #ff8a7a; }
+  .btns { margin: 24px 0; }
+  button { font-size: 24px; padding: 16px 28px; margin-right: 16px; border: 0;
+    -webkit-border-radius: 10px; border-radius: 10px; background: #3a4a5e; color: #fff; }
+  button.primary { background: #2f7d4a; }
+  button.stop { background: #9a3b30; }
+  #log { font-size: 18px; line-height: 1.5; color: #b8c4d2; margin-top: 16px;
+    max-height: 320px; overflow: auto; -webkit-overflow-scrolling: touch; }
+  /* Niewidoczne, ale nie display:none (iOS moglby zatrzymac) */
+  #nosleep { position: fixed; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0.01; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Test NoSleep (S1–S6)</h1>
+  <div class="row">Wideo: <b id="vstate">—</b></div>
+  <div class="row">Czas filmiku rośnie: <b id="vtime">0</b> s</div>
+  <div class="row">Bez dotyku od: <b id="idle">0:00</b></div>
+  <div class="row">Zegar: <b id="clock">—</b></div>
+  <div class="row">Tryb: <b id="mode">—</b></div>
+  <div class="btns">
+    <button id="bStart" class="primary">Włącz wideo</button>
+    <button id="bStop" class="stop">Zatrzymaj wideo</button>
+  </div>
+  <div id="log"></div>
+</div>
+
+<video id="nosleep" muted loop playsinline webkit-playsinline preload="auto"
+  src="data:video/mp4;base64,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BwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwAAAAVBmqAX9QEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcAAAAFQZrAF/UBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcAAAAFQZrgF/UBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAAABUGbABb1ARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHAAAABUGbIBX1ARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBwEYIAcBGCAHARggBw=="></video>
+
+<script>
+(function () {
+  var v = document.getElementById('nosleep');
+  var elState = document.getElementById('vstate');
+  var elTime = document.getElementById('vtime');
+  var elIdle = document.getElementById('idle');
+  var elClock = document.getElementById('clock');
+  var elMode = document.getElementById('mode');
+  var elLog = document.getElementById('log');
+
+  var wanted = false;          // czy wideo ma grac
+  var playedSeconds = 0;       // licznik: ile sekund faktycznie gralo
+  var lastT = -1;
+  var lastTouch = Date.now();
+  var lastTick = Date.now();
+
+  v.muted = true;
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function hms(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function log(msg) {
+    var p = document.createElement('div');
+    p.innerHTML = hms(new Date()) + ' — ' + msg;
+    elLog.insertBefore(p, elLog.firstChild);
+  }
+
+  function setState() {
+    if (!v.paused) { elState.innerHTML = 'gra'; elState.className = 'ok'; }
+    else { elState.innerHTML = 'zatrzymane'; elState.className = 'bad'; }
+  }
+
+  function start() {
+    wanted = true;
+    var p;
+    try { p = v.play(); } catch (e) { log('Błąd play(): ' + e.message); }
+    if (p && typeof p.then === 'function') {
+      p.then(function () { log('Wideo start'); setState(); },
+             function (e) { log('Autostart zablokowany — stuknij „Włącz wideo”'); setState(); });
+    } else {
+      log('Wideo start (bez Promise)');
+    }
+  }
+
+  function stop() {
+    wanted = false;
+    v.pause();
+    log('Wideo stop — ekran powinien zgasnąć po ~5 min bez dotyku');
+    setState();
+  }
+
+  // Zabezpieczenie, gdyby loop nie zadzialal
+  v.addEventListener('ended', function () { if (wanted) { v.currentTime = 0; v.play(); } }, false);
+  v.addEventListener('play', setState, false);
+  v.addEventListener('pause', setState, false);
+
+  document.getElementById('bStart').addEventListener('click', start, false);
+  document.getElementById('bStop').addEventListener('click', stop, false);
+
+  function touched() { lastTouch = Date.now(); }
+  document.addEventListener('touchstart', touched, false);
+  document.addEventListener('mousedown', touched, false);
+
+  elMode.innerHTML = window.navigator.standalone ? 'ikona na ekranie głównym (pełny ekran)' : 'Safari';
+
+  setInterval(function () {
+    var now = Date.now();
+
+    // Wykrycie wybudzenia: przerwa w tykaniu = ekran byl zgaszony
+    var gap = now - lastTick;
+    if (gap > 15000) {
+      log('Powrót po przerwie ' + Math.round(gap / 60000 * 10) / 10 +
+          ' min. Ekran zgasł ok. ' + hms(new Date(lastTick)));
+      if (wanted && v.paused) { log('Wideo stoi po wybudzeniu — wznawiam'); start(); }
+    }
+    lastTick = now;
+
+    // Czy filmik faktycznie leci
+    if (!v.paused && v.currentTime !== lastT) { playedSeconds++; }
+    lastT = v.currentTime;
+    elTime.innerHTML = playedSeconds;
+
+    var idle = Math.floor((now - lastTouch) / 1000);
+    elIdle.innerHTML = Math.floor(idle / 60) + ':' + pad(idle % 60);
+    elClock.innerHTML = hms(new Date(now));
+    setState();
+  }, 1000);
+
+  log('Strona załadowana');
+  start(); // proba autostartu (bez dotyku)
+})();
+</script>
+</body>
+</html>
