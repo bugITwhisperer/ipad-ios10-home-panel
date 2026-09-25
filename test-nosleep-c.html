@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Test NoSleep C</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #1b2430; color: #e8eef5;
+    font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  .wrap { padding: 24px 32px; }
+  h1 { font-size: 28px; font-weight: 600; margin: 0 0 20px 0; }
+  .row { font-size: 26px; margin: 10px 0; }
+  .row b { font-weight: 600; }
+  .ok { color: #7fd48a; }
+  .bad { color: #ff8a7a; }
+  .btns { margin: 24px 0; }
+  button { font-size: 24px; padding: 16px 28px; margin-right: 16px; border: 0;
+    -webkit-border-radius: 10px; border-radius: 10px; color: #fff; }
+  button.primary { background: #2f7d4a; }
+  button.stop { background: #9a3b30; }
+  button.plain { background: #3a4a5e; }
+  #log { font-size: 18px; line-height: 1.5; color: #b8c4d2; margin-top: 16px;
+    max-height: 320px; overflow: auto; -webkit-overflow-scrolling: touch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Test NoSleep — wariant C (udawane przejście)</h1>
+  <div class="row">Trik: <b id="state">—</b></div>
+  <div class="row">Wykonane „przejścia”: <b id="kicks">0</b></div>
+  <div class="row">Przeładowania strony: <b id="loads">0</b></div>
+  <div class="row">Bez dotyku od: <b id="idle">0:00</b></div>
+  <div class="row">Zegar: <b id="clock">—</b></div>
+  <div class="row">Tryb: <b id="mode">—</b></div>
+  <div class="btns">
+    <button id="bStart" class="primary">Włącz trik</button>
+    <button id="bStop" class="stop">Zatrzymaj trik</button>
+    <button id="bClear" class="plain">Wyczyść dziennik</button>
+  </div>
+  <div id="log"></div>
+</div>
+
+<script>
+(function () {
+  // Dziennik i liczniki w localStorage — przetrwaja ewentualne przeladowanie strony
+  var KEY = 'nosleepC';
+  var st;
+  try { st = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { st = {}; }
+  if (!st.log) { st.log = []; }
+  st.loads = (st.loads || 0) + 1;
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+
+  var elState = document.getElementById('state');
+  var elKicks = document.getElementById('kicks');
+  var elLoads = document.getElementById('loads');
+  var elIdle = document.getElementById('idle');
+  var elClock = document.getElementById('clock');
+  var elMode = document.getElementById('mode');
+  var elLog = document.getElementById('log');
+
+  var timer = null;
+  var kicks = 0;
+  var lastTouch = Date.now();
+  var lastTick = Date.now();
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function hms(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function render() {
+    elLog.innerHTML = '';
+    for (var i = st.log.length - 1; i >= 0; i--) {
+      var p = document.createElement('div');
+      p.innerHTML = st.log[i];
+      elLog.appendChild(p);
+    }
+  }
+  function log(msg) {
+    st.log.push(hms(new Date()) + ' — ' + msg);
+    if (st.log.length > 40) { st.log.shift(); }
+    save(); render();
+  }
+  function setState() {
+    if (timer) { elState.innerHTML = 'włączony'; elState.className = 'ok'; }
+    else { elState.innerHTML = 'wyłączony'; elState.className = 'bad'; }
+  }
+
+  // Trik z czasow iOS 9: co 15 s zacznij przejscie na te sama strone i od razu je przerwij
+  function kick() {
+    window.location.href = window.location.href.split('#')[0];
+    window.setTimeout(function () { window.stop(); }, 0);
+    kicks++;
+    elKicks.innerHTML = kicks;
+  }
+
+  function start() {
+    if (timer) { return; }
+    timer = window.setInterval(kick, 15000);
+    st.wanted = true; save();
+    log('Trik start (co 15 s)');
+    setState();
+  }
+  function stop() {
+    if (timer) { window.clearInterval(timer); timer = null; }
+    st.wanted = false; save();
+    log('Trik stop — ekran powinien zgasnąć po ~5 min bez dotyku');
+    setState();
+  }
+
+  document.getElementById('bStart').addEventListener('click', start, false);
+  document.getElementById('bStop').addEventListener('click', stop, false);
+  document.getElementById('bClear').addEventListener('click', function () {
+    st.log = []; st.loads = 1; save(); render(); elLoads.innerHTML = st.loads;
+  }, false);
+
+  function touched() { lastTouch = Date.now(); }
+  document.addEventListener('touchstart', touched, false);
+  document.addEventListener('mousedown', touched, false);
+
+  elMode.innerHTML = window.navigator.standalone ? 'ikona na ekranie głównym (pełny ekran)' : 'Safari';
+  elLoads.innerHTML = st.loads;
+
+  setInterval(function () {
+    var now = Date.now();
+    var gap = now - lastTick;
+    if (gap > 20000) {
+      log('Powrót po przerwie ' + Math.round(gap / 60000 * 10) / 10 +
+          ' min. Ekran zgasł ok. ' + hms(new Date(lastTick)));
+    }
+    lastTick = now;
+    var idle = Math.floor((now - lastTouch) / 1000);
+    elIdle.innerHTML = Math.floor(idle / 60) + ':' + pad(idle % 60);
+    elClock.innerHTML = hms(new Date(now));
+  }, 1000);
+
+  render();
+  if (st.loads > 1 && st.wanted) {
+    log('Strona przeładowana (nr ' + st.loads + ') — wznawiam trik');
+    start();
+  } else {
+    log('Strona załadowana — stuknij „Włącz trik”');
+  }
+  setState();
+})();
+</script>
+</body>
+</html>
