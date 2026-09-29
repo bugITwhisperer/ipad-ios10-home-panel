@@ -11,7 +11,9 @@
      ?key=K&callback=cb                          -> cb({ok, zakupy:[...], todo:[...]})
      ?key=K&callback=cb&tick=zakupy&row=5&done=1 -> cb({ok})
    Item: { row: <sheet row>, text: "...", done: true|false }
-   A ticked item stays visible until midnight (Europe/Warsaw), then hides. */
+   A ticked item stays visible until midnight (Europe/Warsaw), then hides.
+   Ticking/unticking by hand in the Sheet: onEdit() below keeps column D
+   ("Completed at") in step, so a re-ticked item is not hidden by an old date. */
 
 var FIRST_ROW = 4;                                  /* rows 1-3: title, blank, header */
 var SHEETS = { zakupy: "Zakupy", todo: "To do" };  /* API key -> tab name */
@@ -90,6 +92,22 @@ function doTick(p, deps) {
   return { ok: true };
 }
 
+/* Manual edit in the Sheet -> what to write into column D.
+   ed: { sheet: tab name, row: top row, col: left column, values: 2D array }.
+   Returns [{ row, doneAt }]: doneAt = now for a ticked box, "" for unticked.
+   Only column A of the list tabs, rows FIRST_ROW and below, counts. */
+function sheetEditFix(ed, now) {
+  var out = [], isList = false, k, i;
+  for (k in SHEETS) if (hasOwn(SHEETS, k) && SHEETS[k] === ed.sheet) isList = true;
+  if (!isList || ed.col !== 1) return out;
+  for (i = 0; i < ed.values.length; i++) {
+    var row = ed.row + i;
+    if (row < FIRST_ROW) continue;
+    out.push({ row: row, doneAt: ed.values[i][0] === true ? now : "" });
+  }
+  return out;
+}
+
 /* Only a plain identifier may be used as the callback, so the response can
    never carry someone else's code. U+2028/2029 are escaped for old Safari. */
 function jsonpWrap(callback, obj) {
@@ -148,6 +166,19 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/* Simple trigger: Google runs it on every edit made by hand in the Sheet
+   (not on writes made by this script, e.g. a tap on the iPad). */
+function onEdit(e) {
+  if (!e || !e.range) return;
+  var r = e.range;
+  var sh = r.getSheet();
+  var fixes = sheetEditFix({ sheet: sh.getName(), row: r.getRow(), col: r.getColumn(),
+                             values: r.getValues() }, new Date());
+  for (var i = 0; i < fixes.length; i++) {
+    sh.getRange(fixes[i].row, 4).setValue(fixes[i].doneAt);
+  }
+}
+
 /* Run once from the editor. Stores a random key in Script Properties and
    prints it to the Execution log. Running it again replaces the key
    (use that if the URL ever leaks). */
@@ -161,6 +192,6 @@ if (typeof module !== "undefined") {
   module.exports = {
     FIRST_ROW: FIRST_ROW, SHEETS: SHEETS,
     readList: readList, isAuthorized: isAuthorized, handle: handle,
-    jsonpWrap: jsonpWrap
+    jsonpWrap: jsonpWrap, sheetEditFix: sheetEditFix
   };
 }

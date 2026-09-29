@@ -78,6 +78,7 @@ Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 | **16** | znacznik wersji — format, wpis na stronie, miejsce i kolory      |
 | **17** | jasny motyw — jasność tła, kontrast tekstów, niebieskie kafelki pogody |
 | **A**  | etap C, skrypt Google — odczyt list, północ, klucz, odhaczanie |
+| **S**  | etap C, ręczna edycja arkusza — `onEdit` pilnuje kolumny D     |
 | **B**  | etap C, iPad — konfiguracja, lista, offline, JSONP, XSS        |
 | **A0–A23** | kalendarz, skrypt — klucz, zakres 8 dni, E/D/login, brak maili, zmiana czasu |
 | **B7–B29** | kalendarz, iPad — przekreślanie, dropdown, całodniowe, przez północ, +N, XSS, offline |

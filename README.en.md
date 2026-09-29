@@ -107,7 +107,8 @@ Adding and editing happens in the Google Sheets app — the iPad only **displays
 | -- | ---- | ------------ | ------------------------- |
 | ✓  | Date | Task / Item  | Completed at              |
 
-Column **D** is filled by the script — the time an item was ticked, including ticks made in the Sheets app.<br>
+Column **D** is filled by the script — the time an item was ticked, including ticks made in the Sheets app.
+Unticking (on the iPad or in the Sheet) clears column **D**, so a re-ticked item is visible until midnight again (`onEdit` in the script).<br>
 Sheet time zone: `File → Settings → (GMT+01:00) Berlin`.
 
 ### Google script (`apps-script/Code.gs`)

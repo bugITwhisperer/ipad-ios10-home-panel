@@ -72,3 +72,11 @@ When a decision is replaced, the old row stays and gets **Superseded by #N**.
 | 40 | Same `Jutro / 3 / 5 / 7 dni` choice as the weather, but its own dropdown in the calendar view | familiar control; switching one view never changes the other | sharing the header dropdown |
 | 41 | One fetch of 8 days when the view opens; the dropdown filters locally | one request per visit, instant dropdown | a request per dropdown change |
 | 42 | Event past midnight shown on both days (`22:00–02:00`, then `do 02:00`); a day fully covered shows `cały dzień` | at 01:00 the running event must still be in "Dziś" | only on the start day |
+
+---
+
+## Sheet fix — 2026-09-29
+
+| #  | Decision | Why | Rejected alternative |
+| -- | -------- | --- | -------------------- |
+| 43 | Add an `onEdit` simple trigger: ticking column A by hand writes the time into D, unticking clears D (partly reverses #17's "no triggers") | unticking in the Sheet left the old date in D, so a re-ticked item vanished at once instead of staying until midnight; script writes (iPad taps) do not fire `onEdit`, so the two paths never clash | formula `=IF(A4; IF(D4=""; NOW(); D4); "")` with iterative calculation — the iPad tap overwrites it, it breaks on sort/copy and cannot be unit-tested / clean-up on each fetch — fails if unticked and re-ticked between fetches |

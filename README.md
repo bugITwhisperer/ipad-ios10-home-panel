@@ -113,6 +113,7 @@ Szablon „Zakupy-ToDo-list” z checkboxami, dane od wiersza 4:
 Kolumnę **D** wypełnia skrypt wpisując godzinę oznaczenia zadania/zakupu jako zrobionego:
 - na iPadzie
 - w apce Google Sheets
+- odznaczenie (na iPadzie lub w arkuszu) czyści kolumnę **D**, więc ponownie zaznaczona pozycja znów jest widoczna do północy (`onEdit` w skrypcie)
 <br>
 Strefa czasowa arkusza: `Plik → Ustawienia → (GMT+01:00) Warsaw`
 
