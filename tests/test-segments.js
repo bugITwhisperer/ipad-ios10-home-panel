@@ -133,3 +133,24 @@ test("S10 segments live inside their views, so they hide with them", function ()
   assert.match(JS, /el\("cal-range"\)\.innerHTML = segHtml\(ranges\["cal-range"\]\)/);
   assert.match(HTML, /\.seg button \{[^}]*-webkit-appearance: none/, "iOS default button look removed");
 });
+
+/* ---------- K: smaller lower strip (Jutro / Najbliższe N dni) ---------- */
+function px(sel, prop) {
+  var re = new RegExp(sel.replace(/[.#]/g, "\\$&") + " \\{[^}]*" + prop + ": (\\d+)px");
+  var m = HTML.match(re);
+  return m ? Number(m[1]) : null;
+}
+
+test("K1 lower strip fonts are smaller than the upper strip; upper unchanged", function () {
+  var base = { ".c-when": 19, ".c-icon": 34, ".c-temp": 31, ".c-lo": 22, ".c-rain": 18, ".c-wind": 18 };
+  var want = { ".c-when": 16, ".c-icon": 28, ".c-temp": 26, ".c-lo": 18, ".c-rain": 15, ".c-wind": 15 };
+  Object.keys(base).forEach(function (k) {
+    assert.equal(px(k, "font-size"), base[k], "upper " + k + " unchanged");
+    assert.equal(px("#strip-next " + k, "font-size"), want[k], "lower " + k);
+  });
+  assert.doesNotMatch(HTML, /#strip-today \.c-/, "upper strip has no overrides");
+});
+
+test("K2 layout check requires 8 px free at the bottom again", function () {
+  assert.match(h.readRepoFile("tests/layout-check.js"), /var MIN_GAP = 8;/);
+});

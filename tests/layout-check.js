@@ -15,7 +15,7 @@ var fx = require("./fixtures.js");
 
 var PAGE = "file://" + path.join(__dirname, "..", "index.html");
 var W = 1024, H = 768;
-var MIN_GAP = 1;   /* px that must stay free under the lowest element (Em: version label may overlap) */
+var MIN_GAP = 8;   /* px that must stay free under the lowest element */
 
 var LIST = { ok: true,
   zakupy: [{ id: "6Xa1", text: "marchewka 6szt", done: false }, { id: "6Xa2", text: "banany 3szt", done: true },
