@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" width="180" height="180">
+  <!-- Panel Domowy icon, variant B: weather in front, calendar + list below.
+       Full-bleed square: iOS rounds the corners itself.
+       PNGs in this folder (180, 152, 32 px) are rendered from this file. -->
+  <defs>
+    <g id="sun">
+      <circle cx="0" cy="0" r="9" fill="#ffc46b"/>
+      <g stroke="#ffc46b" stroke-width="3" stroke-linecap="round">
+        <line x1="0" y1="-15" x2="0" y2="-19"/><line x1="0" y1="15" x2="0" y2="19"/>
+        <line x1="-15" y1="0" x2="-19" y2="0"/><line x1="15" y1="0" x2="19" y2="0"/>
+        <line x1="-11" y1="-11" x2="-14" y2="-14"/><line x1="11" y1="11" x2="14" y2="14"/>
+        <line x1="-11" y1="11" x2="-14" y2="14"/><line x1="11" y1="-11" x2="14" y2="-14"/>
+      </g>
+      <path d="M-6 14 a8 8 0 0 1 8-8 a10 10 0 0 1 19 3 a7 7 0 0 1 -1 14 h-22 a7 7 0 0 1 -4 -9z" fill="#e8eef6"/>
+    </g>
+    <g id="cal">
+      <rect x="-15" y="-13" width="30" height="28" rx="4" fill="#e8eef6"/>
+      <rect x="-15" y="-13" width="30" height="9" rx="4" fill="#e24b4a"/>
+      <rect x="-15" y="-8" width="30" height="4" fill="#e24b4a"/>
+      <line x1="-8" y1="-17" x2="-8" y2="-10" stroke="#e8eef6" stroke-width="3" stroke-linecap="round"/>
+      <line x1="8" y1="-17" x2="8" y2="-10" stroke="#e8eef6" stroke-width="3" stroke-linecap="round"/>
+      <rect x="-9" y="1" width="5" height="4" rx="1" fill="#1a2330"/>
+      <rect x="-2.5" y="1" width="5" height="4" rx="1" fill="#1a2330"/>
+      <rect x="4" y="1" width="5" height="4" rx="1" fill="#1a2330"/>
+      <rect x="-9" y="7" width="5" height="4" rx="1" fill="#1a2330"/>
+      <rect x="-2.5" y="7" width="5" height="4" rx="1" fill="#1a2330"/>
+    </g>
+    <g id="list">
+      <rect x="-13" y="-16" width="26" height="32" rx="4" fill="#e8eef6"/>
+      <g stroke="#1d9e75" stroke-width="2.5" fill="none" stroke-linecap="round">
+        <path d="M-8 -8 l2 2 l4 -4"/><path d="M-8 1 l2 2 l4 -4"/>
+      </g>
+      <g stroke="#888780" stroke-width="2.5" stroke-linecap="round">
+        <line x1="1" y1="-8" x2="8" y2="-8"/><line x1="1" y1="1" x2="8" y2="1"/><line x1="-8" y1="10" x2="8" y2="10"/>
+      </g>
+    </g>
+  </defs>
+  <rect width="150" height="150" fill="#1a2330"/>
+  <use href="#sun" transform="translate(66,53) scale(1.9)"/>
+  <use href="#cal" transform="translate(45,118)"/>
+  <use href="#list" transform="translate(105,118)"/>
+</svg>

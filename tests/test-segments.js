@@ -154,3 +154,8 @@ test("K1 lower strip fonts are smaller than the upper strip; upper unchanged", f
 test("K2 layout check requires 8 px free at the bottom again", function () {
   assert.match(h.readRepoFile("tests/layout-check.js"), /var MIN_GAP = 8;/);
 });
+
+test("T1 page name 'Panel Domowy' in the browser tab and under the home-screen icon", function () {
+  assert.match(HTML, /<title>Panel Domowy<\/title>/);
+  assert.match(HTML, /<meta name="apple-mobile-web-app-title" content="Panel Domowy">/);
+});
