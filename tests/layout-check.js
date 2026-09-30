@@ -84,18 +84,24 @@ function report(name, bottom, extra) {
 
       await page.click('.tab[data-view="lista"]');
       await page.waitForSelector(".item");
-      var list = await page.evaluate(function (w) {
-        var bottom = 0, wide = 0;
-        var els = document.querySelectorAll("#view-lista .item, #view-lista .list-foot");
-        for (var i = 0; i < els.length; i++) {
-          var r = els[i].getBoundingClientRect();
-          if (r.bottom > bottom) bottom = r.bottom;
-          if (r.right > w) wide++;
-        }
-        return { bottom: Math.round(bottom), wide: wide };
-      }, W);
-      report("lista", list.bottom, list.wide ? list.wide + " kafelkow wychodzi za prawa krawedz" : "");
-      if (process.env.SHOTS) await page.screenshot({ path: process.env.SHOTS + "/lista-" + theme + ".png" });
+      var picks = ["both", "zakupy", "todo"];
+      for (var pk = 0; pk < picks.length; pk++) {
+        await page.click('#list-pick [data-range="' + picks[pk] + '"]');
+        await page.waitForTimeout(100);
+        var list = await page.evaluate(function (w) {
+          var bottom = 0, wide = 0;
+          var els = document.querySelectorAll("#view-lista .item, #view-lista .list-foot");
+          for (var i = 0; i < els.length; i++) {
+            var r = els[i].getBoundingClientRect();
+            if (r.bottom > bottom) bottom = r.bottom;
+            if (r.right > w) wide++;
+          }
+          return { bottom: Math.round(bottom), wide: wide };
+        }, W);
+        report("lista / " + picks[pk], list.bottom, list.wide ? list.wide + " kafelkow wychodzi za prawa krawedz" : "");
+        if (process.env.SHOTS) await page.screenshot({ path: process.env.SHOTS + "/lista-" + theme + "-" + picks[pk] + ".png" });
+      }
+      await page.click('#list-pick [data-range="both"]');
 
       /* tap on an item sends the Todoist id as text */
       var tickUrl = null;

@@ -65,6 +65,7 @@ html, body {
 }
 .seg button:first-child { border-left-width: 1px; border-radius: 7px 0 0 7px; }
 .seg button:last-child { border-radius: 0 7px 7px 0; }
+.seg.off { display: none; }
 .seg button.on { background-color: #2b3a4d; color: #ffc46b; }
 
 /* ---------- views ---------- */
@@ -287,6 +288,7 @@ body.light #ver { color: #5f6c7c; }
       <div class="btn" data-act="save">Zapisz</div><div class="btn" data-act="clear">Wyczy&#347;&#263;</div>
       <p class="list-note" id="setup-err"></p>
     </div>
+    <div class="seg" id="list-pick"></div>
     <div id="lista"></div>
   </div>
 
@@ -310,7 +312,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-09-30.2";
+var APP_VERSION = "2026-09-30.4";
 
 var LAT = 51.2465;
 var LON = 22.5684;
@@ -742,7 +744,32 @@ function collapseIfIdle(ls, state, now) {
   return ls;
 }
 
-function listsHtml(ls, maxRows) {
+function itemHtml(id, it) {
+  return '<div class="item' + (it.done ? " done" : "") + '" data-list="' + id +
+    '" data-id="' + escapeHtml(it.id) + '">' + escapeHtml(it.text) + "</div>";
+}
+
+/* one list over two columns: 1..max left, max+1..2*max right, "+N" under the right;
+   expanded = everything, split in half */
+function singleListHtml(ls, maxRows, id, label) {
+  var items = ls.data[id] || [], exp = ls.expanded[id], j;
+  var shown = exp ? items.length : Math.min(items.length, maxRows * 2);
+  var cut = exp ? Math.ceil(items.length / 2) : Math.min(shown, maxRows);
+  var s = '<div class="cols"><div class="col' + (exp ? " expanded" : "") + '">';
+  s += '<p class="col-head">' + label + "</p>";
+  if (items.length === 0) s += '<p class="empty">Pusto</p>';
+  for (j = 0; j < cut; j++) s += itemHtml(id, items[j]);
+  s += '</div><div class="col' + (exp ? " expanded" : "") + '">';
+  s += '<p class="col-head gap">&nbsp;</p>';
+  for (j = cut; j < shown; j++) s += itemHtml(id, items[j]);
+  if (!exp && items.length > maxRows * 2) {
+    s += '<div class="more" data-list="' + id + '">+' + (items.length - maxRows * 2) +
+         " wi\u0119cej</div>";
+  }
+  return s + "</div></div>";
+}
+
+function listsHtml(ls, maxRows, pick) {
   var s = "", i, j;
   if (ls.error === "auth") {
     s += '<p class="msg"><b>Z\u0142y klucz</b>Skrypt odrzuci\u0142 klucz. Sprawd\u017a adres w ustawieniach.</p>';
@@ -759,6 +786,9 @@ function listsHtml(ls, maxRows) {
     }
     return s;
   }
+  for (i = 0; i < LISTS.length; i++) {
+    if (LISTS[i].id === pick) return s + singleListHtml(ls, maxRows, pick, LISTS[i].label);
+  }
   s += '<div class="cols">';
   for (i = 0; i < LISTS.length; i++) {
     var id = LISTS[i].id;
@@ -768,10 +798,7 @@ function listsHtml(ls, maxRows) {
     s += '<div class="col' + (exp ? " expanded" : "") + '">';
     s += '<p class="col-head">' + LISTS[i].label + "</p>";
     if (items.length === 0) s += '<p class="empty">Pusto</p>';
-    for (j = 0; j < n; j++) {
-      s += '<div class="item' + (items[j].done ? " done" : "") + '" data-list="' + id +
-           '" data-id="' + escapeHtml(items[j].id) + '">' + escapeHtml(items[j].text) + "</div>";
-    }
+    for (j = 0; j < n; j++) s += itemHtml(id, items[j]);
     if (!exp && items.length > maxRows) {
       s += '<div class="more" data-list="' + id + '">+' + (items.length - maxRows) +
            " wi\u0119cej</div>";
@@ -1039,22 +1066,29 @@ var RANGES = [
 ];
 
 /* weather and calendar keep separate choices; back to Jutro after a reload */
-function createRanges() { return { "range": "tomorrow", "cal-range": "tomorrow" }; }
+var LIST_PICKS = [
+  { v: "both", label: "2w1" }, { v: "zakupy", label: "Zakupy" }, { v: "todo", label: "ToDo" }
+];
+var SEG_OPTIONS = { "range": RANGES, "cal-range": RANGES, "list-pick": LIST_PICKS };
+
+function createRanges() { return { "range": "tomorrow", "cal-range": "tomorrow", "list-pick": "both" }; }
 
 function pickRange(r, segId, v) {
   var i, known = false;
   if (!r.hasOwnProperty(segId)) return false;
-  for (i = 0; i < RANGES.length; i++) if (RANGES[i].v === v) known = true;
+  var opts = SEG_OPTIONS[segId] || [];
+  for (i = 0; i < opts.length; i++) if (opts[i].v === v) known = true;
   if (!known || r[segId] === v) return false;
   r[segId] = v;
   return true;
 }
 
-function segHtml(v) {
+function segHtml(v, opts) {
   var s = "", i;
-  for (i = 0; i < RANGES.length; i++) {
-    s += '<button type="button"' + (RANGES[i].v === v ? ' class="on"' : "") +
-      ' data-range="' + RANGES[i].v + '">' + RANGES[i].label + "</button>";
+  opts = opts || RANGES;
+  for (i = 0; i < opts.length; i++) {
+    s += '<button type="button"' + (opts[i].v === v ? ' class="on"' : "") +
+      ' data-range="' + opts[i].v + '">' + opts[i].label + "</button>";
   }
   return s;
 }
@@ -1149,7 +1183,9 @@ if (typeof document !== "undefined") {
       }
       var setup = scr === "setup" || showSetup;
       el("setup").className = setup ? "" : "off";
-      el("lista").innerHTML = setup ? "" : listsHtml(ls, LIST_MAX_ROWS) +
+      el("list-pick").className = setup ? "seg off" : "seg";
+      el("list-pick").innerHTML = segHtml(ranges["list-pick"], LIST_PICKS);
+      el("lista").innerHTML = setup ? "" : listsHtml(ls, LIST_MAX_ROWS, ranges["list-pick"]) +
         '<p class="list-foot"><span class="link" data-act="setup">zmie\u0144 adres</span></p>';
     }
 
@@ -1443,7 +1479,7 @@ if (typeof module !== "undefined") {
     limitItems: limitItems, createCalState: createCalState, needsCalFetch: needsCalFetch,
     onCalResult: onCalResult, calExpand: calExpand, calCollapseIfIdle: calCollapseIfIdle,
     calHtml: calHtml,
-    createRanges: createRanges, pickRange: pickRange, segHtml: segHtml, rangeHead: rangeHead
+    createRanges: createRanges, LIST_PICKS: LIST_PICKS, pickRange: pickRange, segHtml: segHtml, rangeHead: rangeHead
   };
 }
 </script>
