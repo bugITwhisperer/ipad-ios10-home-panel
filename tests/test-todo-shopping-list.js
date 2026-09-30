@@ -160,12 +160,12 @@ test("A7b JSONP callback name is validated (no code injection)", function () {
   assert.equal(g.jsonpWrap("", { ok: true }), null);
 });
 
-/* ---- S. manual edits in the Sheet: onEdit keeps "Zrobione o" (col D) in step with the checkbox ---- */
+/* ---- E. manual edits in the Sheet: onEdit keeps "Zrobione o" (col D) in step with the checkbox ---- */
 
 /* one edit as onEdit(e) sees it: tab name, top-left row/col, 2D values */
 function edit(sheet, row, col, values) { return { sheet: sheet, row: row, col: col, values: values }; }
 
-test("S1 ticking a checkbox in col A writes the current time into col D", function () {
+test("E1 ticking a checkbox in col A writes the current time into col D", function () {
   var g = h.loadGScript();
   var w = g.sheetEditFix(edit("Zakupy", 5, 1, [[true]]), NOW);
   assert.equal(w.length, 1);
@@ -173,20 +173,20 @@ test("S1 ticking a checkbox in col A writes the current time into col D", functi
   assert.equal(w[0].doneAt.getTime(), NOW.getTime());
 });
 
-test("S2 unticking a checkbox in col A clears col D", function () {
+test("E2 unticking a checkbox in col A clears col D", function () {
   var g = h.loadGScript();
   same(g.sheetEditFix(edit("To do", 7, 1, [[false]]), NOW), [{ row: 7, doneAt: "" }]);
   same(g.sheetEditFix(edit("To do", 7, 1, [[""]]), NOW), [{ row: 7, doneAt: "" }],
        "checkbox cleared with Delete counts as unticked");
 });
 
-test("S3 editing another column (text in C, date in D) changes nothing", function () {
+test("E3 editing another column (text in C, date in D) changes nothing", function () {
   var g = h.loadGScript();
   same(g.sheetEditFix(edit("Zakupy", 5, 3, [["mleko"]]), NOW), []);
   same(g.sheetEditFix(edit("Zakupy", 5, 4, [[""]]), NOW), []);
 });
 
-test("S4 header rows 1–3 and other tabs are ignored", function () {
+test("E4 header rows 1–3 and other tabs are ignored", function () {
   var g = h.loadGScript();
   same(g.sheetEditFix(edit("Zakupy", 3, 1, [[true]]), NOW), [], "header row");
   same(g.sheetEditFix(edit("Arkusz1", 5, 1, [[true]]), NOW), [], "other tab");
@@ -194,7 +194,7 @@ test("S4 header rows 1–3 and other tabs are ignored", function () {
        [{ row: 4, doneAt: NOW }], "range starting in the header: only rows 4+ count");
 });
 
-test("S5 several rows at once: each row gets its own value; range wider than col A works", function () {
+test("E5 several rows at once: each row gets its own value; range wider than col A works", function () {
   var g = h.loadGScript();
   same(g.sheetEditFix(edit("Zakupy", 4, 1, [[true], [false], [true]]), NOW),
        [{ row: 4, doneAt: NOW }, { row: 5, doneAt: "" }, { row: 6, doneAt: NOW }]);
@@ -205,7 +205,7 @@ test("S5 several rows at once: each row gets its own value; range wider than col
   same(g.sheetEditFix(edit("To do", 8, 2, [["", "x", ""]]), NOW), []);
 });
 
-test("S6 Code.gs has onEdit(e) wired to sheetEditFix and writing col D", function () {
+test("E6 Code.gs has onEdit(e) wired to sheetEditFix and writing col D", function () {
   var gs = h.readRepoFile("apps-script/Code.gs");
   var m = gs.match(/function onEdit\(e\) \{[\s\S]*?\n\}/);
   assert.ok(m, "function onEdit(e) exists");
