@@ -593,6 +593,17 @@ test("R9 tap on a normal struck-through task still unticks it", function () {
   assert.equal(ls.data.zakupy[1].done, false);
 });
 
+test("R10 a message (recurring / save error) disappears on the next entry into the list view", function () {
+  var p = h.loadPanel();
+  [{ ok: true, zakupy: [], todo: [] }, { error: "timeout" }, { ok: false, error: "todoist" }].forEach(function (res) {
+    var ls = p.createListState();
+    p.onFetchResult(ls, sampleData());
+    ls.message = "Nie uda\u0142o si\u0119 zapisa\u0107";
+    p.onFetchResult(ls, res);
+    assert.equal(ls.message, "", JSON.stringify(res));
+  });
+});
+
 test("B16 fast double tap -> one request", function () {
   var p = h.loadPanel();
   var ls = p.createListState();

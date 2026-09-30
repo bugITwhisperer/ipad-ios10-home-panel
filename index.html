@@ -683,6 +683,7 @@ function needsFetch(prevView, newView) {
 }
 
 function onFetchResult(ls, res) {
+  ls.message = "";                   /* called only on entry into the view: old tap messages go */
   if (res && res.ok === true) {
     ls.data = { zakupy: res.zakupy || [], todo: res.todo || [] };
     ls.offline = false;
