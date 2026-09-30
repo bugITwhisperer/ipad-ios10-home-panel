@@ -413,17 +413,12 @@ test("B28 spaces and line breaks in a pasted calendar URL are removed", function
   assert.equal(p.getSavedCalUrl(s), CAL_URL);
 });
 
-test("B29 calendar dropdown is its own control, weather dropdown unchanged", function () {
+test("B29 calendar range is its own segment control, weather one unchanged (see S1–S5)", function () {
   var html = h.readRepoFile("index.html");
-  var sel = html.match(/<select id="cal-range">([\s\S]*?)<\/select>/);
-  assert.ok(sel, "select#cal-range exists in the calendar view");
-  same(sel[1].match(/value="[^"]+"/g), ['value="tomorrow"', 'value="3"', 'value="5"', 'value="7"']);
-  assert.match(sel[1], />Jutro</);
   var calView = html.match(/<div class="view" id="view-kalendarz">[\s\S]*?\n  <\/div>/)[0];
   assert.match(calView, /id="cal-range"/, "inside the calendar view");
-  assert.match(html, /<select id="range">/, "weather dropdown still there");
+  assert.match(html, /<div class="seg" id="range">/, "weather segments still there");
   var js = html.match(/<script>([\s\S]*?)<\/script>/)[1];
-  assert.match(js, /el\("cal-range"\)\.onchange/, "calendar dropdown has its own handler");
   var paintW = js.match(/function paintWeather\(\) \{[\s\S]*?\n    \}\n/)[0];
-  assert.doesNotMatch(paintW, /cal-range/, "weather never reads the calendar dropdown");
+  assert.doesNotMatch(paintW, /cal-range/, "weather never reads the calendar range");
 });

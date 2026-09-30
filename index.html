@@ -54,21 +54,25 @@ html, body {
 #mini b { font-weight: 400; color: #ffc46b; font-size: 27px; margin-right: 10px; }
 #mini u { text-decoration: none; color: #7d92ab; font-size: 17px; margin-left: 10px; }
 
-select {
-  font-family: inherit; font-size: 15px; color: #b9c9db;
-  background-color: #1a2330; border: 1px solid #2b3a4d;
-  border-radius: 6px; padding: 4px 7px;
+/* range segments: Jutro | 3 dni | 5 dni | 7 dni — one tap, no iOS popover */
+.seg { margin: 12px 0 12px 0; white-space: nowrap; }
+#range { margin-bottom: 22px; }
+.seg button {
+  font-family: inherit; font-size: 17px; color: #b9c9db;
+  background-color: #1a2330; border: 1px solid #2b3a4d; border-left-width: 0;
+  border-radius: 0; padding: 7px 16px; margin: 0;
   -webkit-appearance: none; appearance: none;
-  min-width: 0; width: auto; margin-top: 7px;
 }
-select.off { display: none; }
+.seg button:first-child { border-left-width: 1px; border-radius: 7px 0 0 7px; }
+.seg button:last-child { border-radius: 0 7px 7px 0; }
+.seg button.on { background-color: #2b3a4d; color: #ffc46b; }
 
 /* ---------- views ---------- */
 .view { display: none; }
 .view.on { display: block; }
 
 /* ---------- weather ---------- */
-.now { display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center; margin: 12px 0 34px 0; }
+.now { display: -webkit-box; display: flex; -webkit-box-align: center; align-items: center; margin: 12px 0 32px 0; }
 .now-icon { font-size: 66px; line-height: 1; margin-right: 22px; }
 .now-temp { font-size: 88px; font-weight: 200; line-height: 0.92; color: #ffc46b; margin-right: 26px; }
 .now-text { font-size: 28px; font-weight: 300; line-height: 1.35; color: #b9c9db; }
@@ -95,7 +99,7 @@ select.off { display: none; }
 
 .strip-head {
   font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: #6f8299; margin: 34px 0 12px 0;
+  color: #6f8299; margin: 24px 0 12px 0;
 }
 .msg { margin-top: 30px; font-size: 22px; font-weight: 300; line-height: 1.5; color: #8fa3b8; }
 .msg b { display: block; font-weight: 400; color: #e8eef6; margin-bottom: 6px; }
@@ -147,8 +151,7 @@ select.off { display: none; }
   padding: 10px; margin: 14px 0 12px 0;
   -webkit-user-select: text; user-select: text;
 }
-.cal-bar { text-align: right; margin-top: 8px; }
-.cal-bar select { margin-top: 0; font-size: 17px; }
+.cal-bar .seg { margin-top: 8px; }
 .cal-head {
   font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase;
   color: #6f8299; margin: 18px 0 8px 0;
@@ -181,7 +184,8 @@ body.light .place { color: #475567; }
 body.light .stamp { color: #56647a; }
 body.light .tab { background-color: #a6afba; color: #3f4d5e; border-top-color: #939eab; }
 body.light .tab.on { background-color: #c8ced6; color: #1f2a37; border-top-color: #a0620a; }
-body.light select { background-color: #a6afba; color: #1f2a37; border-color: #8e99a6; }
+body.light .seg button { background-color: #a6afba; color: #1f2a37; border-color: #8e99a6; }
+body.light .seg button.on { background-color: #c8ced6; color: #a0620a; }
 body.light .now-temp { color: #a0620a; }
 body.light .now-text { color: #2e3b4b; }
 body.light .now-text span { color: #4d5b6c; }
@@ -250,12 +254,6 @@ body.light #ver { color: #5f6c7c; }
       <p class="place" id="place">Lublin</p>
       <p class="stamp" id="stamp">Wczytywanie...</p>
       <span id="mini"></span>
-      <select id="range">
-        <option value="tomorrow">Jutro</option>
-        <option value="3">3 dni</option>
-        <option value="5">5 dni</option>
-        <option value="7">7 dni</option>
-      </select>
     </div>
     <div id="topright">
       <div id="tabs"></div>
@@ -265,6 +263,7 @@ body.light #ver { color: #5f6c7c; }
 
   <div class="view" id="view-pogoda">
     <div id="now"></div>
+    <div class="seg" id="range"></div>
     <p class="strip-head" id="head-today" style="margin-top:0">Dzisiaj</p>
     <div id="strip-today"></div>
     <div id="msg-today"></div>
@@ -290,12 +289,7 @@ body.light #ver { color: #5f6c7c; }
       <p class="list-note" id="cal-setup-err"></p>
     </div>
     <div class="cal-bar" id="cal-bar">
-      <select id="cal-range">
-        <option value="tomorrow">Jutro</option>
-        <option value="3">3 dni</option>
-        <option value="5">5 dni</option>
-        <option value="7">7 dni</option>
-      </select>
+      <div class="seg" id="cal-range"></div>
     </div>
     <div id="kalendarz"></div>
   </div>
@@ -307,7 +301,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-09-24.5";
+var APP_VERSION = "2026-09-30.1";
 
 var LAT = 51.2465;
 var LON = 22.5684;
@@ -1016,15 +1010,48 @@ function calHtml(cs, now, mode, maxRows) {
   var today = isoDay(now);
   var days = calDays(cs.data, now, mode);
   s += '<div class="cols"><div class="col">';
-  s += '<p class="cal-head first">Dzi\u015b \u00b7 ' + calDayHead(today) + "</p>";
+  s += '<p class="cal-head first">Dzisiaj \u00b7 ' + calDayHead(today) + "</p>";
   s += calDayHtml(cs, today, calToday(cs.data, now), maxRows);
   s += '</div><div class="col">';
+  if (days.length > 1) s += '<p class="cal-head first">' + rangeHead(mode) + "</p>";
   for (i = 0; i < days.length; i++) {
-    s += '<p class="cal-head' + (i === 0 ? " first" : "") + '">' +
+    s += '<p class="cal-head' + (i === 0 && days.length === 1 ? " first" : "") + '">' +
       (days.length === 1 ? "Jutro \u00b7 " : "") + days[i].head + "</p>";
     s += calDayHtml(cs, days[i].date, days[i].items, maxRows);
   }
   return s + "</div></div>";
+}
+
+/* ---------- range segments ---------- */
+
+var RANGES = [
+  { v: "tomorrow", label: "Jutro" }, { v: "3", label: "3 dni" },
+  { v: "5", label: "5 dni" }, { v: "7", label: "7 dni" }
+];
+
+/* weather and calendar keep separate choices; back to Jutro after a reload */
+function createRanges() { return { "range": "tomorrow", "cal-range": "tomorrow" }; }
+
+function pickRange(r, segId, v) {
+  var i, known = false;
+  if (!r.hasOwnProperty(segId)) return false;
+  for (i = 0; i < RANGES.length; i++) if (RANGES[i].v === v) known = true;
+  if (!known || r[segId] === v) return false;
+  r[segId] = v;
+  return true;
+}
+
+function segHtml(v) {
+  var s = "", i;
+  for (i = 0; i < RANGES.length; i++) {
+    s += '<button type="button"' + (RANGES[i].v === v ? ' class="on"' : "") +
+      ' data-range="' + RANGES[i].v + '">' + RANGES[i].label + "</button>";
+  }
+  return s;
+}
+
+function rangeHead(mode) {
+  return mode === "tomorrow" ? "Jutro" : "Najbli\u017csze " + mode + " dni";
 }
 
 /* ---------- wiring ---------- */
@@ -1046,6 +1073,7 @@ if (typeof document !== "undefined") {
     var cs = createCalState();
     var calBusy = false;
     var showCalSetup = false;
+    var ranges = createRanges();
     var env = {
       document: document, window: window,
       setTimeout: function (f, ms) { return setTimeout(f, ms); },
@@ -1075,29 +1103,23 @@ if (typeof document !== "undefined") {
     }
 
     function paintWeather() {
+      el("range").innerHTML = segHtml(ranges.range);
       if (!cache) return;
       var nowIso = localIso();
 
       el("now").innerHTML = nowHtml(cache);
 
-      /* upper strip: today, independent of the dropdown */
+      /* upper strip: today, independent of the segments */
       var today = buildToday(cache, nowIso);
       el("strip-today").innerHTML = renderCells(today);
       el("msg-today").innerHTML = today.length === 0
         ? '<p class="msg">Dzi\u015b nie ma ju\u017c pe\u0142nych godzin do pokazania.</p>'
         : "";
 
-      /* lower strip: whatever the dropdown selects */
-      var mode = el("range").value;
-      var lower, head;
-      if (mode === "tomorrow") {
-        lower = buildTomorrow(cache);
-        head = "Jutro";
-      } else {
-        lower = buildDaily(cache, Number(mode), nowIso);
-        head = "Najbli\u017cszych " + mode + " dni";
-      }
-      el("head-next").innerHTML = head;
+      /* lower strip: whatever the segments select */
+      var mode = ranges.range;
+      var lower = mode === "tomorrow" ? buildTomorrow(cache) : buildDaily(cache, Number(mode), nowIso);
+      el("head-next").innerHTML = rangeHead(mode);
       el("strip-next").innerHTML = renderCells(lower);
     }
 
@@ -1184,8 +1206,9 @@ if (typeof document !== "undefined") {
       var setup = scr === "setup" || showCalSetup;
       el("cal-setup").className = setup ? "" : "off";
       el("cal-bar").className = setup ? "cal-bar off" : "cal-bar";
+      el("cal-range").innerHTML = segHtml(ranges["cal-range"]);
       el("kalendarz").innerHTML = setup ? "" :
-        calHtml(cs, new Date(), el("cal-range").value, CAL_MAX_ROWS) +
+        calHtml(cs, new Date(), ranges["cal-range"], CAL_MAX_ROWS) +
         '<p class="list-foot"><span class="link" data-act="cal-setup">zmie\u0144 adres</span></p>';
     }
 
@@ -1244,9 +1267,8 @@ if (typeof document !== "undefined") {
       }
       el("tabs").innerHTML = tabsHtml(d.view);
 
-      /* header shows the dropdown on the weather view, the mini bar elsewhere */
+      /* header: the mini bar everywhere except the weather view */
       var onWeather = d.view === "pogoda";
-      el("range").className = onWeather ? "" : "off";
       el("mini").className = onWeather ? "" : "on";
       el("mini").innerHTML = onWeather ? "" : miniNowHtml(cache);
       document.body.className = bodyClass(theme, d.dark);
@@ -1331,9 +1353,6 @@ if (typeof document !== "undefined") {
       x.send();
     }
 
-    el("range").onchange = function () { touched(null); };
-    el("cal-range").onchange = function () { touched(null); };
-
     document.getElementById("theme").onclick = function (e) {
       theme = nextTheme(theme);
       saveTheme(store, theme);
@@ -1348,6 +1367,12 @@ if (typeof document !== "undefined") {
       var item = withAttr(t, "data-id");
       var more = withAttr(t, "data-list");
       var calMore = withAttr(t, "data-calday");
+      var seg = withAttr(t, "data-range");
+      if (seg) {
+        pickRange(ranges, seg.parentNode.id, seg.getAttribute("data-range"));
+        touched(null);
+        return;
+      }
       if (a) {
         var name = a.getAttribute("data-act");
         touched(null);
@@ -1408,7 +1433,8 @@ if (typeof module !== "undefined") {
     calDayHead: calDayHead, calItem: calItem, calToday: calToday, calDays: calDays,
     limitItems: limitItems, createCalState: createCalState, needsCalFetch: needsCalFetch,
     onCalResult: onCalResult, calExpand: calExpand, calCollapseIfIdle: calCollapseIfIdle,
-    calHtml: calHtml
+    calHtml: calHtml,
+    createRanges: createRanges, pickRange: pickRange, segHtml: segHtml, rangeHead: rangeHead
   };
 }
 </script>

@@ -380,7 +380,7 @@ t(46, "dropdown przelacza wylacznie dolny pasek", function () {
   ok(/el\("strip-today"\)\.innerHTML = renderCells\(today\)/.test(SRC),
      "gorny pasek liczony bez odczytu dropdowna");
   var idxToday = SRC.indexOf('el("strip-today").innerHTML');
-  var idxRange = SRC.indexOf('el("range").value', SRC.indexOf("function paintWeather"));
+  var idxRange = SRC.indexOf('var mode = ranges.range', SRC.indexOf("function paintWeather"));
   ok(idxToday < idxRange, "gorny pasek renderowany zanim kod siegnie po dropdown");
   ok(/el\("strip-next"\)\.innerHTML = renderCells\(lower\)/.test(SRC),
      "dolny pasek zalezy od wyboru");
@@ -389,7 +389,7 @@ t(46, "dropdown przelacza wylacznie dolny pasek", function () {
 t(47, "7 dni zwraca 7 kafelkow, API prosi o 8", function () {
   eq(app.buildDaily(S, 7, "2026-06-21T12:00").length, 7);
   ok(/forecast_days=8/.test(SRC), "API prosi o 8 dni");
-  ok(HTML.indexOf('<option value="7"') > -1, "opcja w dropdownie");
+  ok(app.segHtml("7").indexOf('data-range="7"') > -1, "segment 7 dni");
 });
 
 t("47b", "pasek dzienny zaczyna sie od jutra, nie dubluje dzisiaj", function () {
@@ -441,9 +441,8 @@ t(51, "mini ma te same cztery wartosci co duzy pasek", function () {
      "duzy pasek pokazuje to samo");
 });
 
-t(52, "widok pogody: dropdown widoczny, mini ukryty", function () {
-  ok(/el\("range"\)\.className = onWeather \? "" : "off"/.test(SRC),
-     "dropdown chowany poza pogoda");
+t(52, "widok pogody: mini ukryty (segmenty chowaja sie razem z widokiem)", function () {
+  ok(HTML.indexOf('id="range"') > HTML.indexOf('id="view-pogoda"'), "segmenty w widoku pogody");
   ok(/el\("mini"\)\.className = onWeather \? "" : "on"/.test(SRC),
      "mini pokazywany poza pogoda");
   ok(/var onWeather = d\.view === "pogoda"/.test(SRC), "przelacznik oparty o widok");
@@ -463,19 +462,13 @@ t(53, "kalendarz i zakupy: mini widoczny, dropdown ukryty", function () {
   ok(HTML.indexOf('id="mini"') > -1, "kontener mini istnieje");
   ok(/#mini \{[^}]*display: none/.test(HTML), "domyslnie ukryty");
   ok(/#mini\.on \{ display: inline; \}/.test(HTML), "pokazywany klasa on");
-  ok(/select\.off \{ display: none; \}/.test(HTML), "dropdown chowany klasa off");
 });
 
-t(54, "przelaczanie nie zostawia obu naraz ani zadnego", function () {
-  /* obie klasy ustawiane z tego samego warunku, wiec sa zawsze przeciwne */
+t(54, "mini pasek przelaczany jednym warunkiem widoku", function () {
   var m = SRC.match(/var onWeather = d\.view === "pogoda";([\s\S]{0,260})/);
   ok(m, "blok przelaczania znaleziony");
-  var blk = m[1];
-  ok(/el\("range"\)\.className/.test(blk) && /el\("mini"\)\.className/.test(blk),
-     "oba ustawiane w jednym miejscu");
-  ok(blk.indexOf("onWeather ? \"\" : \"off\"") > -1 &&
-     blk.indexOf("onWeather ? \"\" : \"on\"") > -1,
-     "przeciwne stany z jednego warunku");
+  ok(m[1].indexOf("onWeather ? \"\" : \"on\"") > -1, "mini zalezy od widoku");
+  ok(!/el\("range"\)\.className/.test(m[1]), "segmentow nie trzeba chowac recznie");
 });
 
 t(55, "brak danych z API: mini pokazuje --, nie znika i nie daje NaN", function () {

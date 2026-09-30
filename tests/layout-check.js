@@ -15,7 +15,7 @@ var fx = require("./fixtures.js");
 
 var PAGE = "file://" + path.join(__dirname, "..", "index.html");
 var W = 1024, H = 768;
-var MIN_GAP = 8;   /* px that must stay free under the lowest element */
+var MIN_GAP = 1;   /* px that must stay free under the lowest element (Em: version label may overlap) */
 
 var LIST = { ok: true,
   zakupy: [{ id: "6Xa1", text: "marchewka 6szt", done: false }, { id: "6Xa2", text: "banany 3szt", done: true },
@@ -76,7 +76,7 @@ function report(name, bottom, extra) {
       console.log("\n" + theme);
       var modes = ["tomorrow", "3", "5", "7"];
       for (var m = 0; m < modes.length; m++) {
-        await page.selectOption("#range", modes[m]);
+        await page.click('#range [data-range="' + modes[m] + '"]');
         await page.waitForTimeout(100);
         var b = await page.$eval("#strip-next", function (e) { return Math.round(e.getBoundingClientRect().bottom); });
         report("pogoda / " + modes[m], b);
@@ -109,7 +109,7 @@ function report(name, bottom, extra) {
       await page.click('.tab[data-view="kalendarz"]');
       await page.waitForSelector(".ev");
       for (var cm = 0; cm < modes.length; cm++) {
-        await page.selectOption("#cal-range", modes[cm]);
+        await page.click('#cal-range [data-range="' + modes[cm] + '"]');
         await page.waitForTimeout(100);
         var cal = await page.evaluate(function (w) {
           var bottom = 0, wide = 0;
