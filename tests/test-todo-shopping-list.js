@@ -34,8 +34,9 @@ var PZ = "6Xzak0000001", PT = "6Xtodo000002";   /* fake project ids */
 function fakeDeps(opts) {
   opts = opts || {};
   var calls = [];
-  var pages = { active: opts.active || [{ results: [], next_cursor: null }],
-                done:   opts.done   || [{ items: [], next_cursor: null }] };
+  var pages = { active:   opts.active   || [{ results: [], next_cursor: null }],
+                done:     opts.done     || [{ items: [], next_cursor: null }],
+                activity: opts.activity || [{ results: [], next_cursor: null }] };
   return {
     calls: calls,
     secret: "s3cret",
@@ -46,11 +47,18 @@ function fakeDeps(opts) {
     api: function (method, path, params) {
       calls.push({ method: method, path: path, params: plain(params || {}) });
       if (opts.fail) return { code: opts.fail, body: null };
+      if (opts.failPath === path) {
+        if (opts.failCode === "throw") throw new Error("network");
+        return { code: opts.failCode, body: null };
+      }
       if (method === "GET" && path === "/tasks/filter") {
         return { code: 200, body: pages.active.shift() || { results: [], next_cursor: null } };
       }
       if (method === "GET" && path === "/tasks/completed/by_completion_date") {
         return { code: 200, body: pages.done.shift() || { items: [], next_cursor: null } };
+      }
+      if (method === "GET" && path === "/activities") {
+        return { code: 200, body: pages.activity.shift() || { results: [], next_cursor: null } };
       }
       if (method === "POST" && /^\/tasks\/[^/]+\/(close|reopen)$/.test(path)) {
         return { code: 204, body: null };
@@ -61,6 +69,14 @@ function fakeDeps(opts) {
 }
 function page(results, cursor) { return { results: results, next_cursor: cursor || null }; }
 function donePage(items, cursor) { return { items: items, next_cursor: cursor || null }; }
+/* one "completed" event as GET /activities returns it */
+function actEvent(objectId, content, projectId, at, recurring) {
+  var extra = { content: content };
+  if (recurring) extra.is_recurring = true;
+  return { event_type: "completed", object_type: "item", object_id: objectId,
+           parent_project_id: projectId, event_date: at.toISOString(), extra_data: extra };
+}
+function actPage(results, cursor) { return { results: results, next_cursor: cursor || null }; }
 function texts(list) { return list.map(function (i) { return i.text; }); }
 
 /* ======================= A. Apps Script (apps-script/Code.gs) — Todoist ======================= */
@@ -268,12 +284,92 @@ test("A11 task both active and done today (recurring) is shown once, as active",
   same(out.todo, [{ id: "b1", text: "wynieść śmieci", done: false }]);
 });
 
-test("A12 one list load = exactly 2 Todoist calls (active + done), both GET", function () {
+test("A12 one list load = exactly 3 Todoist calls (active + done + activity), all GET", function () {
   var g = h.loadGScript();
   var d = fakeDeps();
   g.handle({ key: "s3cret" }, d);
   same(d.calls.map(function (x) { return x.method + " " + x.path; }).sort(),
-       ["GET /tasks/completed/by_completion_date", "GET /tasks/filter"]);
+       ["GET /activities", "GET /tasks/completed/by_completion_date", "GET /tasks/filter"]);
+});
+
+/* ---- R. recurring tasks: Todoist moves them to the next date instead of completing,
+        so "done today" for them comes from the activity log ---- */
+
+test("R1 recurring task ticked today is shown struck through, flagged recurring, after other done items", function () {
+  var g = h.loadGScript();
+  var d = fakeDeps({
+    done: [donePage([doneTask("b2", "podlać kwiaty", PT, waw("2026-09-23T08:00:00"))])],
+    activity: [actPage([actEvent("b9", "wynieść śmieci", PT, waw("2026-09-23T07:00:00"), true)])]
+  });
+  var out = g.handle({ key: "s3cret" }, d);
+  same(out.todo, [
+    { id: "b2", text: "podlać kwiaty", done: true },
+    { id: "b9", text: "wynieść śmieci", done: true, recurring: true }
+  ]);
+});
+
+test("R2 a normal (non-recurring) task from the activity log is ignored", function () {
+  var g = h.loadGScript();
+  var d = fakeDeps({
+    activity: [actPage([actEvent("a1", "test panel Z", PZ, waw("2026-09-23T09:00:00"), false)])]
+  });
+  same(g.handle({ key: "s3cret" }, d).zakupy, [], "ticked then unticked must not come back");
+});
+
+test("R3 recurring from another project or ticked yesterday is ignored", function () {
+  var g = h.loadGScript();
+  var d = fakeDeps({ activity: [actPage([
+    actEvent("x1", "prywatne", "6Xinbox00000", waw("2026-09-23T09:00:00"), true),
+    actEvent("b9", "wynieść śmieci", PT, waw("2026-09-22T21:00:00"), true)
+  ])] });
+  var out = g.handle({ key: "s3cret" }, d);
+  same(out.zakupy, []);
+  same(out.todo, []);
+});
+
+test("R4 recurring that is also active (e.g. due again today) is shown once, as active", function () {
+  var g = h.loadGScript();
+  var d = fakeDeps({
+    active: [page([task("b9", "wynieść śmieci", PT, { due: { date: "2026-09-23", is_recurring: true } })])],
+    activity: [actPage([actEvent("b9", "wynieść śmieci", PT, waw("2026-09-23T07:00:00"), true)])]
+  });
+  same(g.handle({ key: "s3cret" }, d).todo, [{ id: "b9", text: "wynieść śmieci", done: false }]);
+});
+
+test("R5 the same recurring task ticked twice today is shown once", function () {
+  var g = h.loadGScript();
+  var d = fakeDeps({ activity: [actPage([
+    actEvent("b9", "wynieść śmieci", PT, waw("2026-09-23T07:00:00"), true),
+    actEvent("b9", "wynieść śmieci", PT, waw("2026-09-23T12:00:00"), true)
+  ])] });
+  same(texts(g.handle({ key: "s3cret" }, d).todo), ["wynieść śmieci"]);
+});
+
+test("R6 activity query: GET /activities, completed items since Warsaw midnight, with pagination", function () {
+  var g = h.loadGScript();
+  var d = fakeDeps({ activity: [
+    actPage([actEvent("b8", "karma", PT, waw("2026-09-23T06:00:00"), true)], "CUR3"),
+    actPage([actEvent("b9", "wynieść śmieci", PT, waw("2026-09-23T07:00:00"), true)])
+  ] });
+  var out = g.handle({ key: "s3cret" }, d);
+  same(texts(out.todo), ["karma", "wynieść śmieci"]);
+  var c = d.calls.filter(function (x) { return x.path === "/activities"; });
+  assert.equal(c.length, 2);
+  assert.equal(c[0].method, "GET");
+  assert.equal(c[0].params.event_type, "completed");
+  assert.equal(c[0].params.object_type, "item");
+  assert.equal(c[0].params.date_from, "2026-09-22T22:00:00Z");
+  assert.equal(c[1].params.cursor, "CUR3");
+});
+
+test("R7 activity log failing does not break the list (no recurring, still ok)", function () {
+  var g = h.loadGScript();
+  [429, 500, 403, "throw"].forEach(function (code) {
+    var d = fakeDeps({ active: [page([task("a1", "mleko", PZ)])], failPath: "/activities", failCode: code });
+    var out = g.handle({ key: "s3cret" }, d);
+    assert.equal(out.ok, true, "code " + code);
+    same(out.zakupy, [{ id: "a1", text: "mleko", done: false }], "code " + code);
+  });
 });
 
 /* ---- E. manual edits in the Sheet: onEdit keeps "Zrobione o" (col D) in step with the checkbox ---- */
@@ -475,6 +571,26 @@ test("B15b tap sends the id as text: attribute read as-is, URL-encoded", functio
   var env = fakeEnv();
   p.jsonpRequest(env, GOOD_URL, { tick: "zakupy", id: "a b&c=1", done: "1" }, function () {});
   assert.match(env.appended[0].src, /&id=a%20b%26c%3D1&/);
+});
+
+test("R8 tap on a struck-through recurring task: no request, stays struck, message", function () {
+  var p = h.loadPanel();
+  var ls = p.createListState();
+  p.onFetchResult(ls, { ok: true, zakupy: [],
+    todo: [{ id: "6Xr1", text: "wynieść śmieci", done: true, recurring: true }] });
+  var r = p.tickStart(ls, "todo", "6Xr1");
+  assert.equal(r.request, null, "nothing sent to the script");
+  assert.equal(ls.data.todo[0].done, true, "stays struck through");
+  assert.match(ls.message, /cykliczn/i);
+  assert.match(p.listsHtml(ls, 8), /cykliczn/i, "message is shown on the panel");
+});
+
+test("R9 tap on a normal struck-through task still unticks it", function () {
+  var p = h.loadPanel();
+  var ls = p.createListState();
+  p.onFetchResult(ls, sampleData());
+  same(p.tickStart(ls, "zakupy", "6Xa2").request, { tick: "zakupy", id: "6Xa2", done: "0" });
+  assert.equal(ls.data.zakupy[1].done, false);
 });
 
 test("B16 fast double tap -> one request", function () {

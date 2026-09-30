@@ -19,7 +19,9 @@
      ?key=K&callback=cb&tick=zakupy&id=6Xab&done=1  -> cb({ok})   (done=0 reopens)
    Item: { id: "<Todoist task id>", text: "...", done: true|false }
    Shown: tasks with no date, due today or overdue, plus tasks completed today
-   (Europe/Warsaw), struck through until midnight.
+   (Europe/Warsaw), struck through until midnight. Recurring tasks are not
+   "completed" by Todoist (it moves them to the next date), so those come from
+   the activity log and carry recurring: true; they cannot be unticked.
    Errors: {ok:false, error: "auth" | "config" | "bad-tick" | "todoist" [, status]} */
 
 var TZ = "Europe/Warsaw";
@@ -111,6 +113,13 @@ function handle(params, deps) {
   } catch (err) {
     return todoistError(err);
   }
+  var activity;
+  try {                                                /* optional: only for recurring tasks */
+    activity = fetchAll(deps, "/activities",
+                        { event_type: "completed", object_type: "item", date_from: range.since }, "results");
+  } catch (err2) {
+    activity = [];
+  }
 
   var out = { ok: true }, seen = {}, k, i;
   for (k in LISTS) if (hasOwn(LISTS, k)) out[k] = [];
@@ -121,20 +130,30 @@ function handle(params, deps) {
     }
     return null;
   }
-  function add(t, isDone) {
-    var list = listOf(t.project_id);
-    var text = cellText(t.content);
-    var id = String(t.id);
+  function add(id, projectId, content, isDone, recurring) {
+    var list = listOf(projectId);
+    var text = cellText(content);
+    id = String(id);
     if (!list || !text || seen[id]) return;
     seen[id] = true;
-    out[list].push({ id: id, text: text, done: isDone });
+    var item = { id: id, text: text, done: isDone };
+    if (recurring) item.recurring = true;
+    out[list].push(item);
   }
 
-  for (i = 0; i < active.length; i++) add(active[i], false);
+  function isToday(iso) {
+    var at = new Date(iso);
+    return !isNaN(at.getTime()) && deps.dayOf(at) === today;
+  }
+
+  for (i = 0; i < active.length; i++) add(active[i].id, active[i].project_id, active[i].content, false);
   for (i = 0; i < done.length; i++) {
-    var at = new Date(done[i].completed_at);
-    if (isNaN(at.getTime()) || deps.dayOf(at) !== today) continue;   /* only done today */
-    add(done[i], true);
+    if (isToday(done[i].completed_at)) add(done[i].id, done[i].project_id, done[i].content, true);
+  }
+  for (i = 0; i < activity.length; i++) {
+    var ev = activity[i], extra = ev.extra_data || {};
+    if (extra.is_recurring !== true || !isToday(ev.event_date)) continue;   /* normal tasks: see above */
+    add(ev.object_id, ev.parent_project_id, extra.content, true, true);
   }
   return out;
 }

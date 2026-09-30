@@ -708,6 +708,10 @@ function tickStart(ls, list, id) {
   var key = list + ":" + id;
   var it = findItem(ls, list, id);
   if (!it || ls.pending[key]) return { ls: ls, request: null };
+  if (it.done && it.recurring) {     /* Todoist already moved it to the next date */
+    ls.message = "Zadania cyklicznego nie da si\u0119 cofn\u0105\u0107 \u2014 Todoist przesun\u0105\u0142 je na kolejny termin.";
+    return { ls: ls, request: null };
+  }
   it.done = !it.done;
   ls.pending[key] = true;
   ls.message = "";
