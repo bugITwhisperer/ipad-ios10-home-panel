@@ -2,56 +2,61 @@
    Source of truth lives in the repo (apps-script/Code.gs); paste it into the
    Apps Script editor as the whole of Code.gs.
 
-   Setup, once:
-     1. Run generateKey() -> copy the key from the Execution log.
-     2. Deploy -> Manage deployments -> edit -> Version: New version.
-     3. On the iPad paste:  <Web app URL>?key=<key>
+   Data comes from Todoist (two shared projects: Zakupy, ToDo). The script is
+   the middleman, so the Todoist token never reaches the iPad or the repo.
+   The Sheet stays as a backup only (onEdit below still keeps it tidy); going
+   back to it = restore Code.gs + index.html from git (commit 68dc512).
+
+   Script Properties (Project Settings -> Script Properties):
+     KEY               key the iPad sends (run generateKey() to create it)
+     TODOIST_TOKEN     Todoist -> Settings -> Integrations -> Developer -> API token
+     ZAKUPY_PROJECT_ID id of the "Zakupy" project
+     TODO_PROJECT_ID   id of the "ToDo" project
+   After setting them run smokeTest() once and read the Execution log.
 
    API (JSONP, GET only):
-     ?key=K&callback=cb                          -> cb({ok, zakupy:[...], todo:[...]})
-     ?key=K&callback=cb&tick=zakupy&row=5&done=1 -> cb({ok})
-   Item: { row: <sheet row>, text: "...", done: true|false }
-   A ticked item stays visible until midnight (Europe/Warsaw), then hides.
-   Ticking/unticking by hand in the Sheet: onEdit() below keeps column D
-   ("Completed at") in step, so a re-ticked item is not hidden by an old date. */
+     ?key=K&callback=cb                             -> cb({ok, zakupy:[...], todo:[...]})
+     ?key=K&callback=cb&tick=zakupy&id=6Xab&done=1  -> cb({ok})   (done=0 reopens)
+   Item: { id: "<Todoist task id>", text: "...", done: true|false }
+   Shown: tasks with no date, due today or overdue, plus tasks completed today
+   (Europe/Warsaw), struck through until midnight.
+   Errors: {ok:false, error: "auth" | "config" | "bad-tick" | "todoist" [, status]} */
 
-var FIRST_ROW = 4;                                  /* rows 1-3: title, blank, header */
-var SHEETS = { zakupy: "Zakupy", todo: "To do" };  /* API key -> tab name */
 var TZ = "Europe/Warsaw";
 var CALLBACK_RE = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/;
+var TODOIST_BASE = "https://api.todoist.com/api/v1";
+var LISTS = { zakupy: "Zakupy", todo: "ToDo" };      /* API key -> Todoist project name */
+var FILTER = "(no date | today | overdue) & (#" + LISTS.zakupy + " | #" + LISTS.todo + ")";
+var TASK_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
+var MAX_PAGES = 10;                                   /* safety stop for pagination */
+
+/* Sheet backup: tab names and first data row, used only by onEdit */
+var FIRST_ROW = 4;                                  /* rows 1-3: title, blank, header */
+var SHEETS = { zakupy: "Zakupy", todo: "To do" };
 
 function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
-
-function isDate(v) {
-  return !!v && typeof v.getTime === "function" && !isNaN(v.getTime());
-}
 
 function cellText(v) {
   return String(v === null || v === undefined ? "" : v).replace(/^\s+|\s+$/g, "");
 }
 
-/* rows: values from FIRST_ROW down, each [checkbox, date, text, doneAt].
-   today: "yyyy-mm-dd" in Warsaw. dayOf(Date) -> "yyyy-mm-dd" in Warsaw.
-   Returns visible items plus the rows that were ticked in the Sheets app
-   and still need a "done at" time written. */
-function readList(rows, today, dayOf, now) {
-  var items = [], fills = [], i;
-  for (i = 0; i < rows.length; i++) {
-    var r = rows[i];
-    var text = cellText(r[2]);
-    if (!text) continue;
-    var rowNo = FIRST_ROW + i;
-    var done = r[0] === true;
-    if (done) {
-      if (isDate(r[3])) {
-        if (dayOf(r[3]) < today) continue;          /* done before today -> hidden */
-      } else {
-        fills.push({ row: rowNo, doneAt: now });    /* ticked in Sheets: start the clock now */
-      }
+function isoUtc(ms) { return new Date(ms).toISOString().replace(/\.\d{3}Z$/, "Z"); }
+
+/* "Done today" window: from Warsaw midnight to now, both in UTC.
+   dayOf(Date) -> "yyyy-mm-dd" in Warsaw. Works on DST change days. */
+function todayRange(now, dayOf) {
+  var t = now.getTime();
+  var today = dayOf(new Date(t));
+  var p = today.split("-");
+  var utcMidnight = Date.UTC(+p[0], +p[1] - 1, +p[2]);
+  var k, c;
+  for (k = 14; k >= -12; k--) {                   /* earliest instant that is already "today" */
+    c = utcMidnight - k * 3600000;
+    if (dayOf(new Date(c)) === today && dayOf(new Date(c - 1)) !== today) {
+      return { since: isoUtc(c), until: isoUtc(t) };
     }
-    items.push({ row: rowNo, text: text, done: done });
   }
-  return { items: items, fills: fills };
+  return { since: isoUtc(t - 86400000), until: isoUtc(t) };  /* never reached for real zones */
 }
 
 function isAuthorized(params, secret) {
@@ -59,36 +64,93 @@ function isAuthorized(params, secret) {
   return typeof params.key === "string" && params.key === secret;
 }
 
-/* deps: { secret, today, dayOf, now, readRows(name), lastRow(name), writeRow(name, row, [done, doneAt]) } */
+function hasConfig(deps) {
+  var pr = deps.projects || {};
+  function ok(v) { return typeof v === "string" && v.length > 0; }
+  return ok(deps.token) && ok(pr.zakupy) && ok(pr.todo);
+}
+
+function todoistError(err) {
+  return (err && typeof err.status === "number")
+    ? { ok: false, error: "todoist", status: err.status }
+    : { ok: false, error: "todoist" };
+}
+
+/* all pages of one GET list endpoint; field = "results" or "items" */
+function fetchAll(deps, path, params, field) {
+  var out = [], cursor = null, page, k;
+  for (page = 0; page < MAX_PAGES; page++) {
+    var q = {};
+    for (k in params) if (hasOwn(params, k)) q[k] = params[k];
+    if (cursor) q.cursor = cursor;
+    var res = deps.api("GET", path, q);
+    if (!res || res.code !== 200) throw { status: res ? res.code : 0 };
+    var body = res.body || {};
+    var list = body[field] || [];
+    for (k = 0; k < list.length; k++) out.push(list[k]);
+    cursor = body.next_cursor;
+    if (!cursor) break;
+  }
+  return out;
+}
+
+/* deps: { secret, token, projects: {zakupy, todo}, now, dayOf, api(method, path, params) -> {code, body} } */
 function handle(params, deps) {
   params = params || {};
   if (!isAuthorized(params, deps.secret)) return { ok: false, error: "auth" };
+  if (!hasConfig(deps)) return { ok: false, error: "config" };
   if (params.tick !== undefined) return doTick(params, deps);
 
-  var out = { ok: true }, k, j;
-  for (k in SHEETS) {
-    if (!hasOwn(SHEETS, k)) continue;
-    var res = readList(deps.readRows(SHEETS[k]), deps.today, deps.dayOf, deps.now);
-    for (j = 0; j < res.fills.length; j++) {
-      deps.writeRow(SHEETS[k], res.fills[j].row, [true, res.fills[j].doneAt]);
+  var range = todayRange(deps.now, deps.dayOf);
+  var today = deps.dayOf(deps.now);
+  var active, done;
+  try {
+    active = fetchAll(deps, "/tasks/filter", { query: FILTER }, "results");
+    done = fetchAll(deps, "/tasks/completed/by_completion_date",
+                    { since: range.since, until: range.until }, "items");
+  } catch (err) {
+    return todoistError(err);
+  }
+
+  var out = { ok: true }, seen = {}, k, i;
+  for (k in LISTS) if (hasOwn(LISTS, k)) out[k] = [];
+
+  function listOf(projectId) {
+    for (var key in LISTS) {
+      if (hasOwn(LISTS, key) && String(deps.projects[key]) === String(projectId)) return key;
     }
-    out[k] = res.items;
+    return null;
+  }
+  function add(t, isDone) {
+    var list = listOf(t.project_id);
+    var text = cellText(t.content);
+    var id = String(t.id);
+    if (!list || !text || seen[id]) return;
+    seen[id] = true;
+    out[list].push({ id: id, text: text, done: isDone });
+  }
+
+  for (i = 0; i < active.length; i++) add(active[i], false);
+  for (i = 0; i < done.length; i++) {
+    var at = new Date(done[i].completed_at);
+    if (isNaN(at.getTime()) || deps.dayOf(at) !== today) continue;   /* only done today */
+    add(done[i], true);
   }
   return out;
 }
 
 function doTick(p, deps) {
   var bad = { ok: false, error: "bad-tick" };
-  if (typeof p.tick !== "string" || !hasOwn(SHEETS, p.tick)) return bad;
-  if (typeof p.row !== "string" || !/^[0-9]{1,6}$/.test(p.row)) return bad;
+  if (typeof p.tick !== "string" || !hasOwn(LISTS, p.tick)) return bad;
+  if (typeof p.id !== "string" || !TASK_ID_RE.test(p.id)) return bad;
   if (p.done !== "1" && p.done !== "0") return bad;
-  var name = SHEETS[p.tick];
-  var row = parseInt(p.row, 10);
-  if (row < FIRST_ROW || row > deps.lastRow(name)) return bad;
-  var r = deps.readRows(name)[row - FIRST_ROW];
-  if (!r || !cellText(r[2])) return bad;             /* never tick an empty row */
-  var done = p.done === "1";
-  deps.writeRow(name, row, [done, done ? deps.now : ""]);
+  var res;
+  try {
+    res = deps.api("POST", "/tasks/" + p.id + (p.done === "1" ? "/close" : "/reopen"), {});
+  } catch (err) {
+    return todoistError(err);
+  }
+  if (!res || (res.code !== 200 && res.code !== 204)) return todoistError({ status: res ? res.code : 0 });
   return { ok: true };
 }
 
@@ -118,30 +180,37 @@ function jsonpWrap(callback, obj) {
 
 /* ---------- Apps Script wiring (not unit-tested; needs Google) ---------- */
 
+function queryString(params) {
+  var parts = [], k;
+  for (k in params) {
+    if (hasOwn(params, k)) parts.push(encodeURIComponent(k) + "=" + encodeURIComponent(params[k]));
+  }
+  return parts.length ? "?" + parts.join("&") : "";
+}
+
 function gasDeps() {
-  var ss = SpreadsheetApp.getActive();
-  var now = new Date();
-  function sheet(name) { return ss.getSheetByName(name); }
+  var props = PropertiesService.getScriptProperties();
+  var token = props.getProperty("TODOIST_TOKEN") || "";
   return {
-    secret: PropertiesService.getScriptProperties().getProperty("KEY") || "",
-    now: now,
-    today: Utilities.formatDate(now, TZ, "yyyy-MM-dd"),
+    secret: props.getProperty("KEY") || "",
+    token: token,
+    projects: {
+      zakupy: props.getProperty("ZAKUPY_PROJECT_ID") || "",
+      todo: props.getProperty("TODO_PROJECT_ID") || ""
+    },
+    now: new Date(),
     dayOf: function (d) { return Utilities.formatDate(d, TZ, "yyyy-MM-dd"); },
-    readRows: function (name) {
-      var sh = sheet(name);
-      if (!sh) return [];
-      var last = sh.getLastRow();
-      if (last < FIRST_ROW) return [];
-      return sh.getRange(FIRST_ROW, 1, last - FIRST_ROW + 1, 4).getValues();
-    },
-    lastRow: function (name) {
-      var sh = sheet(name);
-      return sh ? sh.getLastRow() : 0;
-    },
-    writeRow: function (name, row, values) {
-      var sh = sheet(name);
-      sh.getRange(row, 1).setValue(values[0]);
-      sh.getRange(row, 4).setValue(values[1]);
+    api: function (method, path, params) {
+      var url = TODOIST_BASE + path + (method === "GET" ? queryString(params || {}) : "");
+      var resp = UrlFetchApp.fetch(url, {
+        method: method.toLowerCase(),
+        headers: { Authorization: "Bearer " + token },
+        muteHttpExceptions: true
+      });
+      var text = resp.getContentText();
+      var body = null;
+      try { body = text ? JSON.parse(text) : null; } catch (e) { body = null; }
+      return { code: resp.getResponseCode(), body: body };
     }
   };
 }
@@ -188,10 +257,25 @@ function generateKey() {
   Logger.log("KEY = " + key);
 }
 
+/* Run once from the editor after filling Script Properties (manual test D1).
+   Logs every Todoist call with its HTTP code, then the answer the iPad would get.
+   Look for: both calls 200, and your tasks under zakupy / todo. */
+function smokeTest() {
+  var deps = gasDeps();
+  var realApi = deps.api;
+  deps.api = function (method, path, params) {
+    var res = realApi(method, path, params);
+    Logger.log(method + " " + path + " -> " + res.code);
+    return res;
+  };
+  Logger.log("filter: " + FILTER);
+  Logger.log(JSON.stringify(handle({ key: deps.secret }, deps), null, 2));
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
-    FIRST_ROW: FIRST_ROW, SHEETS: SHEETS,
-    readList: readList, isAuthorized: isAuthorized, handle: handle,
+    FIRST_ROW: FIRST_ROW, SHEETS: SHEETS, LISTS: LISTS, FILTER: FILTER,
+    isAuthorized: isAuthorized, handle: handle, todayRange: todayRange,
     jsonpWrap: jsonpWrap, sheetEditFix: sheetEditFix
   };
 }

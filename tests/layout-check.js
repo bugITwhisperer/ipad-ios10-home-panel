@@ -18,11 +18,11 @@ var W = 1024, H = 768;
 var MIN_GAP = 8;   /* px that must stay free under the lowest element */
 
 var LIST = { ok: true,
-  zakupy: [{ row: 4, text: "marchewka 6szt", done: false }, { row: 5, text: "banany 3szt", done: true },
-           { row: 6, text: "bardzo długa pozycja zakupowa która musi się zawinąć do drugiej albo trzeciej linii", done: false },
-           { row: 7, text: "https://sklep.example.com/produkt/bardzodlugiadresbezspacjiktorymusisiezlamac", done: false }],
-  todo: [{ row: 4, text: "zdecydować się na pakiet medyczny i porównać oferty trzech firm przed końcem miesiąca", done: false },
-         { row: 5, text: "krótkie", done: true }] };
+  zakupy: [{ id: "6Xa1", text: "marchewka 6szt", done: false }, { id: "6Xa2", text: "banany 3szt", done: true },
+           { id: "6Xa3", text: "bardzo długa pozycja zakupowa która musi się zawinąć do drugiej albo trzeciej linii", done: false },
+           { id: "6Xa4", text: "https://sklep.example.com/produkt/bardzodlugiadresbezspacjiktorymusisiezlamac", done: false }],
+  todo: [{ id: "6Xb1", text: "zdecydować się na pakiet medyczny i porównać oferty trzech firm przed końcem miesiąca", done: false },
+         { id: "6Xb2", text: "krótkie", done: true }] };
 
 
 /* calendar fixture: today 2026-09-23 (Wed), clock 12:00 */
@@ -95,6 +95,16 @@ function report(name, bottom, extra) {
         return { bottom: Math.round(bottom), wide: wide };
       }, W);
       report("lista", list.bottom, list.wide ? list.wide + " kafelkow wychodzi za prawa krawedz" : "");
+      if (process.env.SHOTS) await page.screenshot({ path: process.env.SHOTS + "/lista-" + theme + ".png" });
+
+      /* tap on an item sends the Todoist id as text */
+      var tickUrl = null;
+      page.on("request", function (rq) { if (rq.url().indexOf("tick=") > -1) tickUrl = rq.url(); });
+      await page.click('.item[data-id="6Xa1"]');
+      await page.waitForTimeout(200);
+      var tickOk = !!tickUrl && tickUrl.indexOf("&tick=zakupy&id=6Xa1&done=1") > -1;
+      if (!tickOk) failures++;
+      console.log("  " + (tickOk ? "PASS" : "FAIL") + "  tap -> tick=zakupy&id=6Xa1&done=1");
 
       await page.click('.tab[data-view="kalendarz"]');
       await page.waitForSelector(".ev");

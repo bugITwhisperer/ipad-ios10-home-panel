@@ -696,28 +696,28 @@ function onFetchResult(ls, res) {
   return ls;
 }
 
-function findItem(ls, list, row) {
+function findItem(ls, list, id) {
   var items = ls.data && ls.data[list], i;
   if (!items) return null;
-  for (i = 0; i < items.length; i++) if (items[i].row === row) return items[i];
+  for (i = 0; i < items.length; i++) if (String(items[i].id) === String(id)) return items[i];
   return null;
 }
 
 /* optimistic: flip at once, one request per item at a time */
-function tickStart(ls, list, row) {
-  var key = list + ":" + row;
-  var it = findItem(ls, list, row);
+function tickStart(ls, list, id) {
+  var key = list + ":" + id;
+  var it = findItem(ls, list, id);
   if (!it || ls.pending[key]) return { ls: ls, request: null };
   it.done = !it.done;
   ls.pending[key] = true;
   ls.message = "";
-  return { ls: ls, request: { tick: list, row: row, done: it.done ? "1" : "0" } };
+  return { ls: ls, request: { tick: list, id: id, done: it.done ? "1" : "0" } };
 }
 
-function tickResult(ls, list, row, ok) {
-  delete ls.pending[list + ":" + row];
+function tickResult(ls, list, id, ok) {
+  delete ls.pending[list + ":" + id];
   if (!ok) {
-    var it = findItem(ls, list, row);
+    var it = findItem(ls, list, id);
     if (it) it.done = !it.done;
     ls.message = "Nie uda\u0142o si\u0119 zapisa\u0107 \u2014 spr\u00f3buj jeszcze raz.";
   }
@@ -762,7 +762,7 @@ function listsHtml(ls, maxRows) {
     if (items.length === 0) s += '<p class="empty">Pusto</p>';
     for (j = 0; j < n; j++) {
       s += '<div class="item' + (items[j].done ? " done" : "") + '" data-list="' + id +
-           '" data-row="' + escapeHtml(items[j].row) + '">' + escapeHtml(items[j].text) + "</div>";
+           '" data-id="' + escapeHtml(items[j].id) + '">' + escapeHtml(items[j].text) + "</div>";
     }
     if (!exp && items.length > maxRows) {
       s += '<div class="more" data-list="' + id + '">+' + (items.length - maxRows) +
@@ -1128,14 +1128,14 @@ if (typeof document !== "undefined") {
       });
     }
 
-    function tick(list, row) {
+    function tick(list, id) {
       var url = savedUrl();
       if (!url) return;
-      var r = tickStart(ls, list, row);
+      var r = tickStart(ls, list, id);
       paintList();
       if (!r.request) return;
       jsonpRequest(env, url, r.request, function (res) {
-        tickResult(ls, list, row, !!(res && res.ok === true));
+        tickResult(ls, list, id, !!(res && res.ok === true));
         paintList();
       });
     }
@@ -1340,7 +1340,7 @@ if (typeof document !== "undefined") {
       var t = e.target;
       if (t && t.id === "theme") return;
       var a = withAttr(t, "data-act");
-      var item = withAttr(t, "data-row");
+      var item = withAttr(t, "data-id");
       var more = withAttr(t, "data-list");
       var calMore = withAttr(t, "data-calday");
       if (a) {
@@ -1352,7 +1352,7 @@ if (typeof document !== "undefined") {
       if (calMore) { calExpand(cs, calMore.getAttribute("data-calday")); touched(null); return; }
       if (item) {
         touched(null);
-        tick(item.getAttribute("data-list"), Number(item.getAttribute("data-row")));
+        tick(item.getAttribute("data-list"), item.getAttribute("data-id"));
         return;
       }
       if (more) { expandList(ls, more.getAttribute("data-list")); touched(null); return; }
