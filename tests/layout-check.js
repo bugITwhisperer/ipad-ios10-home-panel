@@ -102,6 +102,7 @@ function report(name, bottom, extra) {
         if (process.env.SHOTS) await page.screenshot({ path: process.env.SHOTS + "/lista-" + theme + "-" + picks[pk] + ".png" });
       }
       await page.click('#list-pick [data-range="both"]');
+      var listSegTop = await page.$eval("#list-pick", function (e) { return Math.round(e.getBoundingClientRect().top); });
 
       /* tap on an item sends the Todoist id as text */
       var tickUrl = null;
@@ -114,6 +115,11 @@ function report(name, bottom, extra) {
 
       await page.click('.tab[data-view="kalendarz"]');
       await page.waitForSelector(".ev");
+      /* J1: switching Zakupy/ToDo <-> Kalendarz must not make the segments jump */
+      var calSegTop = await page.$eval("#cal-range", function (e) { return Math.round(e.getBoundingClientRect().top); });
+      var sameTop = calSegTop === listSegTop;
+      if (!sameTop) failures++;
+      console.log("  " + (sameTop ? "PASS" : "FAIL") + "  segmenty lista/kalendarz na tej samej wysokosci (" + listSegTop + " / " + calSegTop + ")");
       for (var cm = 0; cm < modes.length; cm++) {
         await page.click('#cal-range [data-range="' + modes[cm] + '"]');
         await page.waitForTimeout(100);
