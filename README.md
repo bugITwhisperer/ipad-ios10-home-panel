@@ -220,6 +220,10 @@ Osobny projekt, na koncie gmail panelu domowego - widzi tylko jego kalendarz.
 5. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone**
 6. na iPadzie, w zakładce Kalendarz: wkleić `https://script.google.com/macros/s/…/exec?key=KLUCZ` → `Zapisz`
 
+| Jasny | Ciemny |
+| --- | --- |
+| ![Wklejanie adresu z kluczem - jasny](docs/screens/kalendarz-klucz.png) | ![Wklejanie adresu z kluczem - ciemny](docs/screens/kalendarz-klucz-dark.png) |
+
 > 🔐 Adres kalendarza ma w pamięci iPada własne miejsce (`gcalUrl`) - nie nadpisuje adresu listy.
 
 ### Osoby i kolory (`PEOPLE`)
@@ -302,16 +306,19 @@ Wyjście z trybu dostępu nadzorowanego: potrójne kliknięcie Home → `Rozpocz
 graph LR
     IPAD["📱 iPad 4 (iOS 10.3.3)"]
     METEO["🌐 Open-Meteo"]
-    subgraph G1["🟩 Apps Script listy"]
-        CODE["Code.gs"] --> TODO["✅ Todoist<br/>Zakupy · ToDo"]
-        SHEET["Sheet.gs (alternatywa)"] -.-> ARK["Arkusz Google"]
+    subgraph G2["🟩 Apps Script: kalendarz"]
+        CAL["Calendar.gs + PEOPLE<br/>konto gmail panelu domowego"] --> GCAL["📅 Kalendarz Google"]
     end
-    subgraph G2["🟩 Apps Script kalendarza<br/>konto gmail panelu domowego"]
-        CAL["Calendar.gs<br/>+ PEOPLE"] --> GCAL["📅 Kalendarz Google"]
+    subgraph G3["🟩 Apps Script: arkusz (alternatywa)"]
+        SHEET["Sheet.gs"] --> ARK["Arkusz Google"]
+    end
+    subgraph G1["🟩 Apps Script: Todoist"]
+        CODE["Code.gs"] --> TODO["✅ Todoist<br/>Zakupy · ToDo"]
     end
     METEO -. "co 15 min" .-> IPAD
-    IPAD <-. "JSONP: lista + odhaczanie" .-> CODE
     IPAD <-. "JSONP: wydarzenia" .-> CAL
+    IPAD <-. "zamiast Todoist" .-> SHEET
+    IPAD <-. "JSONP: lista + odhaczanie" .-> CODE
 ```
 
 **Wdrożenie** - jak kod trafia na iPada i do Google:
@@ -385,6 +392,6 @@ Zrzuty do README (`docs/screens/`, dane testowe): `npm run screens`.
 | Lista na Todoist zamiast arkusza | ✅ Gotowe      | Todoist + Apps Script; arkusz zostaje jako alternatywa (`Sheet.gs`)      |
 | Wygaszanie ekranu nocą          | 📋 Planowane   | mini-aplikacja na iPada z darmowym Apple ID, odświeżana przez Sideloadly na Mac mini (2012); strona WWW nie utrzyma iOS 10 w czuwaniu |
 | Synchronizacja arkusz ↔ Todoist | 📋 Planowane   | nowe pozycje z arkusza → Todoist, odhaczanie w obie strony               |
-| Własny serwer                   | 📋 Planowane   | n8n na VPS trzyma tokeny, panel pod własnym adresem                      |
+| Własny serwer                   | 📋 Planowane   | n8n na VPS trzyma tokeny, panel pod własnym adresem; bez ręcznego wklejania adresu z kluczem na iPadzie                      |
 | Radar opadów                    | 📋 Planowane   | RainViewer lub IMGW; wymaga biblioteki mapowej, na iOS 10 niepewne       |
 | Wyszukiwarka miast              | 🅿️ Zaparkowane | pole tekstowe + geocoding API Open-Meteo                                 |

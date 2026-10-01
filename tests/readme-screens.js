@@ -66,6 +66,24 @@ async function shoot(browser, THEME) {
   await page.screenshot({ path: path.join(OUT, "kalendarz" + sfx + ".png") });
 
   await page.close();
+
+  /* calendar setup screen: no saved address yet, example address typed in (fake key) */
+  var setup = await browser.newPage({ viewport: { width: 1024, height: 768 } });
+  await setup.clock.install({ time: new Date("2026-09-23T12:00:00+02:00") });
+  await setup.route("https://api.open-meteo.com/**", function (r) {
+    r.fulfill({ contentType: "application/json",
+      body: JSON.stringify(fx.make({ date: "2026-09-23", sunrise: "06:35", sunset: "18:45" })) });
+  });
+  await setup.addInitScript(function (th) { localStorage.setItem("panel-theme", th); }, THEME);
+  await setup.goto(PAGE);
+  await setup.waitForTimeout(300);
+  await setup.click('.tab[data-view="kalendarz"]');
+  await setup.waitForSelector("#cal-setup-url", { state: "visible" });
+  await setup.fill("#cal-setup-url", "https://script.google.com/macros/s/AKfy…/exec?key=TWOJ_KLUCZ");
+  await setup.screenshot({ path: path.join(OUT, "kalendarz-klucz" + sfx + ".png") });
+  await setup.close();
+
+  console.log("docs/screens: kalendarz-klucz" + sfx + ".png");
   console.log("docs/screens: pogoda" + sfx + ".png, lista" + sfx + ".png, kalendarz" + sfx + ".png (" + THEME + ")");
 }
 

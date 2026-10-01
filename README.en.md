@@ -214,6 +214,10 @@ A separate project on the home panel's Gmail account — it can only see that ac
 5. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone**
 6. On the iPad, in the Kalendarz tab: paste `https://script.google.com/macros/s/…/exec?key=KEY` → `Zapisz`
 
+| Light | Dark |
+| --- | --- |
+| ![Pasting the address with the key - light](docs/screens/kalendarz-klucz.png) | ![Pasting the address with the key - dark](docs/screens/kalendarz-klucz-dark.png) |
+
 > 🔐 The calendar address has its own storage slot on the iPad (`gcalUrl`) — it never overwrites the list address.
 
 ### People and colours (`PEOPLE`)
@@ -261,16 +265,19 @@ A button next to the tabs switches the look. The icon shows the theme you will *
 graph LR
     IPAD["📱 iPad 4 (iOS 10.3.3)"]
     METEO["🌐 Open-Meteo"]
-    subgraph G1["🟩 List Apps Script"]
-        CODE["Code.gs"] --> TODO["✅ Todoist<br/>Zakupy · ToDo"]
-        SHEET["Sheet.gs (alternative)"] -.-> ARK["Google Sheet"]
+    subgraph G2["🟩 Apps Script: calendar"]
+        CAL["Calendar.gs + PEOPLE<br/>home panel's Gmail account"] --> GCAL["📅 Google Calendar"]
     end
-    subgraph G2["🟩 Calendar Apps Script<br/>home panel's Gmail account"]
-        CAL["Calendar.gs<br/>+ PEOPLE"] --> GCAL["📅 Google Calendar"]
+    subgraph G3["🟩 Apps Script: sheet (alternative)"]
+        SHEET["Sheet.gs"] --> ARK["Google Sheet"]
+    end
+    subgraph G1["🟩 Apps Script: Todoist"]
+        CODE["Code.gs"] --> TODO["✅ Todoist<br/>Zakupy · ToDo"]
     end
     METEO -. "every 15 min" .-> IPAD
-    IPAD <-. "JSONP: list + ticks" .-> CODE
     IPAD <-. "JSONP: events" .-> CAL
+    IPAD <-. "instead of Todoist" .-> SHEET
+    IPAD <-. "JSONP: list + ticks" .-> CODE
 ```
 
 **Deployment** - how the code reaches the iPad and Google:
@@ -385,7 +392,7 @@ README screenshots (`docs/screens/`, test data): `npm run screens`.
 | List on Todoist instead of the sheet | ✅ Done | Todoist + Apps Script; the sheet stays as an alternative (`Sheet.gs`) |
 | Screen off at night             | 📋 Planned  | a small iPad app on a free Apple ID, refreshed by Sideloadly on a Mac mini (2012); a web page cannot keep iOS 10 awake |
 | Sheet ↔ Todoist sync            | 📋 Planned  | new sheet items → Todoist, ticks both ways                            |
-| Own server                      | 📋 Planned  | n8n on a VPS holds the tokens, panel on its own address               |
+| Own server                      | 📋 Planned  | n8n on a VPS holds the tokens, panel on its own address; no script address with a key to paste on the iPad               |
 | Rain radar                      | 📋 Planned  | RainViewer or IMGW; needs a map library, uncertain on iOS 10          |
 | City search                     | 🅿️ Parked   | text field + Open-Meteo geocoding API                                 |
 
