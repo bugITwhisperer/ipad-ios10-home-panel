@@ -8,7 +8,7 @@ Z głównego folderu repo, jedną komendą (Node 22+):
 node --test
 ```
 
-Uruchamia wszystkie zestawy: `tests/test-todo-shopping-list.js` (etap C),
+Uruchamia wszystkie zestawy: `tests/test-todo-shopping-list.js` (lista Zakupy/ToDo),
 `tests/test-calendar.js` (33 testy, kalendarz) i `tests/test-panel.js` (panel). Każdy można też puścić osobno:
 
 ```bash
@@ -46,7 +46,7 @@ po nim poznasz, czy iPad wczytał już nową wersję.
 | Plik                    | Rola                                                        |
 | ----------------------- | ----------------------------------------------------------- |
 | `../index.html`         | źródło panelu — cała logika w bloku `<script>`              |
-| `../apps-script/Code.gs`| backend Apps Script (etap C) — wklejany do edytora Google   |
+| `../apps-script/Code.gs`| backend Apps Script (lista Zakupy/ToDo) — wklejany do edytora Google   |
 | `test-panel.js`         | testy panelu: rotacja, noc, pogoda, motyw                   |
 | `fixtures.js`           | generator sztucznych odpowiedzi Open-Meteo                  |
 | `test-todo-shopping-list.js`     | testy etapu C: skrypt Google + widok Zakupy/ToDo + JSONP    |
@@ -58,7 +58,7 @@ po nim poznasz, czy iPad wczytał już nową wersję.
 Testy nie wychodzą do sieci. `fixtures.js` buduje odpowiedź o tym samym
 kształcie co prawdziwe API, z podanymi godzinami wschodu i zachodu — dzięki
 temu da się sprawdzić zimę, lato i zmianę czasu bez czekania na kalendarz.
-Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
+Lista Zakupy/ToDo używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 
 ## Grupy
 
@@ -77,9 +77,9 @@ Etap C używa atrap arkusza i przeglądarki, więc nie potrzebuje konta Google.
 | **15** | rotacja w czasie — termin zmiany, pauza po dotyku, noc, ręczna zmiana |
 | **16** | znacznik wersji — format, wpis na stronie, miejsce i kolory      |
 | **17** | jasny motyw — jasność tła, kontrast tekstów, niebieskie kafelki pogody |
-| **A**  | etap C, skrypt Google — odczyt list, północ, klucz, odhaczanie |
-| **E**  | etap C, ręczna edycja arkusza — `onEdit` pilnuje kolumny D     |
-| **B**  | etap C, iPad — konfiguracja, lista, offline, JSONP, XSS        |
+| **A**  | lista Zakupy/ToDo, skrypt Google — odczyt list, północ, klucz, odhaczanie |
+| **E**  | lista Zakupy/ToDo, ręczna edycja arkusza — `onEdit` pilnuje kolumny D     |
+| **B**  | lista Zakupy/ToDo, iPad — konfiguracja, lista, offline, JSONP, XSS        |
 | **A0–A23** | kalendarz, skrypt — klucz, zakres 8 dni, E/D/login, brak maili, zmiana czasu |
 | **B7–B29** | kalendarz, iPad — przekreślanie, dropdown, całodniowe, przez północ, +N, XSS, offline |
 | **R**  | regresja — logika pogody i przeładowanie o 4:00              |

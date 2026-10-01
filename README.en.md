@@ -32,17 +32,21 @@ _Built with Claude (Anthropic)_
 
 ## 🤔 Why this exists
 
-A 4th-generation iPad (**A1458**, 2012) tops out at **iOS 10** — Apple support ended long ago. <br>
+A 4th-generation iPad (**A1458**, 2012) tops out at **iOS 10.3.3** — Apple support ended long ago. <br>
 
-One static page, written in the old syntax this Safari still understands:
+A home wall panel with three views - weather, a Shopping/ToDo list and a calendar - written in the old syntax that Safari on iOS 10.3.3 still understands.
 
-| Layer      | Choice                               | Reason                            |
-| ---------- | ------------------------------------ | --------------------------------- |
-| **Data**   | [Open-Meteo](https://open-meteo.com) | free API, no key                  |
-| **List**   | Google Sheet + Apps Script           | edited in the Sheets app, no server |
-| **Host**   | GitHub Pages                         | static HTML, nothing to maintain  |
-| **Code**   | single `index.html`                  | HTML + CSS + JS together          |
-| **Syntax** | ES5, old CSS                         | anything newer breaks on iOS 10   |
+| View                   | Data source                                                  | Reason                               |
+| ---------------------- | ------------------------------------------------------------ | ------------------------------------ |
+| **Weather**            | [Open-Meteo](https://open-meteo.com)                         | free API, no key                     |
+| **Shopping/ToDo List** | Todoist + Apps Script                                        | edited in the Todoist app, no server |
+| **Calendar**           | Google Calendar of the home panel's Gmail account + Apps Script | only events that account is invited to reach the panel |
+
+| What       | Choice              | Reason                            |
+| ---------- | ------------------- | --------------------------------- |
+| **Host**   | GitHub Pages        | static HTML, nothing to maintain  |
+| **Code**   | single `index.html` | HTML + CSS + JS together          |
+| **Syntax** | ES5, old CSS        | anything newer breaks on iOS 10   |
 
 ---
 
@@ -50,11 +54,11 @@ One static page, written in the old syntax this Safari still understands:
 
 The panel rotates through three views (tabs) on its own:
 
-| View         | Time on screen | Status               |
-| ------------ | -------------- | -------------------- |
-| **Weather**  | 10 min         | ✅ working            |
-| **Calendar** | 5 min          | ✅ working            |
-| **Shopping/ToDo List** | 5 min          | ✅ working            |
+| View                   | Time on screen |
+| ---------------------- | -------------- |
+| **Weather**            | 10 min         |
+| **Calendar**           | 5 min          |
+| **Shopping/ToDo List** | 5 min          |
 
 - a full loop takes **20 minutes**
 - tabs at the top switch views manually
@@ -64,6 +68,10 @@ The panel rotates through three views (tabs) on its own:
 
 ## 👀 Weather
 
+| Light | Dark |
+| --- | --- |
+| ![Weather view - light](docs/screens/pogoda.png) | ![Weather view - dark](docs/screens/pogoda-dark.png) |
+
 **Current conditions** at the top: temperature, icon, wind, precipitation
 
 Below that, **two hourly strips at once**:
@@ -71,7 +79,7 @@ Below that, **two hourly strips at once**:
 | Strip     | Range                                          | Control        |
 | --------- | ---------------------------------------------- | -------------- |
 | **Upper** | today, from the current hour through 23:00     | always visible |
-| **Lower** | tomorrow hourly (from sunrise), or 3/5/7 days  | dropdown       |
+| **Lower** | tomorrow hourly (from sunrise), or 3/5/7 days  | segment `Jutro / 3 dni / 5 dni / 7 dni` above "DZISIAJ" |
 
 Every cell: **temperature · icon · chance of rain · wind**
 
@@ -85,21 +93,58 @@ Every cell: **temperature · icon · chance of rain · wind**
 
 ## 📝 Shopping/ToDo List
 
-Two columns side by side, **Zakupy** (shopping) and **ToDo**, read from two tabs of one Google Sheet (`Zakupy`, `To do`).<br>
-Adding and editing happens in the Google Sheets app — the iPad only **displays and ticks off**.
+| Light | Dark |
+| --- | --- |
+| ![Shopping/ToDo view - light](docs/screens/lista.png) | ![Shopping/ToDo view - dark](docs/screens/lista-dark.png) |
+
+Two lists: **Zakupy** (shopping) and **ToDo**. The source is **Todoist** (or, as an alternative, a Google Sheet, see [Todoist vs Google Sheet](#todoist-vs-google-sheet)).<br>
+Adding and editing happens in the Todoist (or Sheets) app — the iPad only **displays and ticks off**.
+
+Segment `2w1 | Zakupy | ToDo` above the lists:
+- **2w1** (2-in-1) — both lists side by side, 7 items per column
+- **Zakupy** / **ToDo** — one list over two columns (1–7 and 8–14)
 
 | What               | How                                                              |
 | ------------------ | ---------------------------------------------------------------- |
-| **Tick off**       | tap an item → struck through at once, saved to the sheet in the background |
-| **Undo**           | tap it again                                                     |
+| **Tick off**       | tap an item → struck through at once, saved in the background   |
+| **Undo**           | tap it again (except Todoist recurring tasks)                    |
 | **Save fails**     | the strike-through reverts, message "Nie udało się zapisać"      |
 | **Done items**     | stay visible until midnight (Warsaw time), then hide             |
-| **Long list**      | 7 items per column, then `+N więcej` (N more) — tap to expand   |
+| **Long list**      | then `+N więcej` (N more) — tap to expand, folds back after 5 min idle |
 | **Long text**      | wraps onto more lines, nothing is cut off                        |
 | **Fetching**       | when the view opens (rotation or tab), never on a timer          |
 | **No network**     | the last list stays, marked `offline`                            |
 
-### The sheet
+### Todoist vs Google Sheet
+
+|                      | **Todoist** (in use)                                   | **Google Sheet** (alternative)               |
+| -------------------- | ------------------------------------------------------ | ------------------------------------------- |
+| **Script**           | `apps-script/Code.gs`                                  | `apps-script/Sheet.gs`                      |
+| **Editing**          | Todoist app                                            | Google Sheets app                           |
+| **Lists**            | projects `Zakupy` and `ToDo` (shared)                  | tabs `Zakupy` and `To do`                   |
+| **Shows**            | no date, due today, overdue + done today               | everything not done + done today            |
+| **Recurring tasks**  | ticked today stay visible, cannot be unticked          | none                                        |
+| **Configuration**    | `KEY`, `TODOIST_TOKEN`, `ZAKUPY_PROJECT_ID`, `TODO_PROJECT_ID` | `KEY`                               |
+| **Item id**          | Todoist task id                                        | row number                                  |
+
+Both scripts answer the panel in the same shape, so switching needs no change on the iPad.
+
+#### Todoist
+
+The script sits between the iPad and Todoist and keeps the token, so it never reaches the iPad or the repo.
+
+Script Properties (`Project Settings → Script Properties`):
+
+| Name                | Value                                                              |
+| ------------------- | ------------------------------------------------------------------ |
+| `KEY`               | the key the iPad sends (created by `generateKey`)                  |
+| `TODOIST_TOKEN`     | Todoist → `Settings → Integrations → Developer → API token`        |
+| `ZAKUPY_PROJECT_ID` | id of the `Zakupy` project                                         |
+| `TODO_PROJECT_ID`   | id of the `ToDo` project                                           |
+
+After setting them: run `smokeTest` once and read the Execution log.
+
+#### Google Sheet
 
 "To-do list" template with checkboxes, data from row 4:
 
@@ -111,9 +156,11 @@ Column **D** is filled by the script — the time an item was ticked, including 
 Unticking (on the iPad or in the Sheet) clears column **D**, so a re-ticked item is visible until midnight again (`onEdit` in the script).<br>
 Sheet time zone: `File → Settings → (GMT+01:00) Berlin`.
 
-### Google script (`apps-script/Code.gs`)
+Last pre-Todoist version: tag `v0.3.2-arkusz`. `Sheet.gs` is that version, adapted to the current panel.
 
-1. In the Google Sheet: `Extensions → Apps Script`, paste the whole of `apps-script/Code.gs`
+#### Deploying the script
+
+1. In the Google Sheet: `Extensions → Apps Script`, paste the whole of `apps-script/Code.gs` (Todoist) or `apps-script/Sheet.gs` (sheet) as `Code.gs`
 2. Run `generateKey`
 3. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone** — not "Anyone with Google account": the home-screen app isn't signed in to Google
 4. After every code change: `Deploy → Manage deployments → ✏️ → Version: New version`
@@ -124,40 +171,68 @@ Sheet time zone: `File → Settings → (GMT+01:00) Berlin`.
 
 [`health-check/list.html`](https://bugitwhisperer.github.io/ipad-ios10-home-panel/health-check/list.html) — health check: can the iPad reach the Google script (the address without the key is enough; an `auth` answer also means the connection works)
 
+#### Switching Todoist ↔ sheet
+
+1. In the Apps Script project bound to the sheet: replace the whole of `Code.gs` with the other script (`Sheet.gs` or `Code.gs` from the repo)
+2. `Deploy → Manage deployments → ✏️ → Version: New version`
+3. Nothing to change on the iPad: same URL and key
+
 ## 📅 Calendar
 
-Events from the panel's own Google account (`puxle.home.panel`).<br>
+| Light | Dark |
+| --- | --- |
+| ![Calendar view - light](docs/screens/kalendarz.png) | ![Calendar view - dark](docs/screens/kalendarz-dark.png) |
+
+Events from the home panel's Gmail account (e.g. `home.panel@…`, a dedicated account, not a personal one).<br>
 Only events that account is **invited** to reach the panel — the iPad only displays.
 
 | What                 | How                                                                  |
 | -------------------- | -------------------------------------------------------------------- |
 | **Left column**      | Today — finished events stay **struck through** until midnight        |
-| **Right column**     | dropdown `Jutro / 3 / 5 / 7 dni` (tomorrow / days), starting tomorrow |
-| **Who**              | tag by creator: **E** green, **D** blue, anyone else — login before `@` |
+| **Right column**     | segment `Jutro / 3 / 5 / 7 dni` (tomorrow / days) above the columns, starting tomorrow |
+| **Who**              | tag by creator: label and colour from `PEOPLE` (below), anyone else — login before `@` |
 | **All-day**          | on top of the day as "cały dzień" (all day)                           |
 | **Past midnight**    | on both days, the second one as "do 02:00" (until 02:00)              |
 | **Many events**      | 5 per day, then `+N więcej` — struck-through ones are hidden first    |
 | **Long title**       | wraps, nothing is cut off                                             |
-| **Fetching**         | when the view opens, 8 days at once; the dropdown filters locally     |
+| **Fetching**         | when the view opens, 8 days at once; the segment filters locally      |
 | **No network**       | last data stays, marked `offline — aktualizacja HH:MM`                |
 
-### Panel account
+### Home panel's Gmail account
 
 `Settings → Event settings → Add invitations to my calendar → Only if the sender is known`,
-with E's and D's addresses added to the panel account's contacts. Time zone: Warsaw.
+with the addresses from `PEOPLE` added to the home panel's Gmail account contacts. Time zone: Warsaw.
 
 ### Google script (`apps-script/Calendar.gs`)
 
-A separate project on the panel account — it can only see the panel's calendar.
+A separate project on the home panel's Gmail account — it can only see that account's calendar.
 
-1. Signed in as the panel account: [script.google.com](https://script.google.com) → `New project`, paste the whole of `apps-script/Calendar.gs`
+1. Signed in as the home panel's Gmail account: [script.google.com](https://script.google.com) → `New project`, paste the whole of `apps-script/Calendar.gs`
 2. `Project Settings` → time zone `(GMT+01:00) Warsaw`
-3. `Project Settings → Script Properties`: `EMAIL_E` = E's address, `EMAIL_D` = D's address (never in the repo)
+3. `Project Settings → Script Properties`: add `PEOPLE` (optional, see below)
 4. Run `generateKey`, allow calendar access, copy the key from the log
 5. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone**
 6. On the iPad, in the Kalendarz tab: paste `https://script.google.com/macros/s/…/exec?key=KEY` → `Zapisz`
 
 > 🔐 The calendar address has its own storage slot on the iPad (`gcalUrl`) — it never overwrites the list address.
+
+### People and colours (`PEOPLE`)
+
+Who gets which tag is set outside the code, in the calendar project's **Script Properties**:
+`Apps Script → ⚙️ Project Settings → Script Properties → Add script property`
+
+| Property | Value                                                  |
+| -------- | ------------------------------------------------------ |
+| `PEOPLE` | `address=label:#colour, address=label:#colour, …`      |
+
+Example: `anna@example.com=A:#2e9e5b, piotr@example.com=P`
+
+- **address** — the event creator's e-mail (case does not matter)
+- **label** — tag text, e.g. a letter or a name
+- **colour** — optional, `#rrggbb` only; missing or invalid → next from the palette: green, blue, orange, purple, pink, teal
+- anyone not in `PEOPLE` → grey tag with the login before `@`; without `PEOPLE`, everyone
+- no new deployment needed after changing it — the script reads it on every fetch
+- the addresses never reach the repo or the iPad
 
 ---
 
@@ -180,43 +255,38 @@ A button next to the tabs switches the look. The icon shows the theme you will *
 
 ## 🎯 How it works
 
+**Where the data comes from** - the panel's daily work:
+
 ```mermaid
-graph TD
-    subgraph REPO["🗂️ bugITwhisperer/ipad-ios10-home-panel"]
-        HTML["index.html<br/>HTML + CSS + JS in one file"]
-        GS["apps-script/Code.gs<br/>Google script source"]
+graph LR
+    IPAD["📱 iPad 4 (iOS 10.3.3)"]
+    METEO["🌐 Open-Meteo"]
+    subgraph G1["🟩 List Apps Script"]
+        CODE["Code.gs"] --> TODO["✅ Todoist<br/>Zakupy · ToDo"]
+        SHEET["Sheet.gs (alternative)"] -.-> ARK["Google Sheet"]
     end
-
-    subgraph PAGES["☁️ GitHub Pages"]
-        SITE["bugitwhisperer.github.io<br/>/ipad-ios10-home-panel/"]
+    subgraph G2["🟩 Calendar Apps Script<br/>home panel's Gmail account"]
+        CAL["Calendar.gs<br/>+ PEOPLE"] --> GCAL["📅 Google Calendar"]
     end
+    METEO -. "every 15 min" .-> IPAD
+    IPAD <-. "JSONP: list + ticks" .-> CODE
+    IPAD <-. "JSONP: events" .-> CAL
+```
 
-    subgraph IPAD["📱 iPad 4 (iOS 10) on the wall"]
-        ICON["Home-screen icon<br/>fullscreen<br/>no address bar"]
-        ROT["View rotation<br/>weather 10 min<br/>calendar 5 min<br/>shopping/todo list 5 min"]
-        GUIDED["Guided Access<br/>Home button locked<br/>passcode to exit"]
-        ICON --> ROT --> GUIDED
+**Deployment** - how the code reaches the iPad and Google:
+
+```mermaid
+graph LR
+    subgraph REPO["🗂️ repo"]
+        HTML["index.html<br/>HTML + CSS + JS"]
+        GS["apps-script/*.gs"]
     end
-
-    API["🌐 Open-Meteo API<br/>no key"]
-
-    subgraph GOOGLE["🟩 Google"]
-        SCRIPT["Apps Script<br/>Web App + key"]
-        SHEET["Sheet<br/>Zakupy · To do"]
-        SCRIPT <--> SHEET
-    end
-
-    HTML == "commit → build (~60 s)" ==> SITE
-    SITE == "first load" ==> ICON
-    API -. "every 15 min: weather data" .-> ICON
-    SITE -. "at 4:00: full code reload" .-> ICON
-    ICON <-. "JSONP: list and ticks" .-> SCRIPT
-    GS -. "pasted by hand" .-> SCRIPT
-
-    classDef repo fill:#1e3a5f,stroke:#4a90d9,color:#fff
-    classDef dev fill:#2d4a2d,stroke:#5aaa5a,color:#fff
-    class HTML,SITE,GS repo
-    class ICON,ROT,GUIDED dev
+    PAGES["☁️ GitHub Pages"]
+    IPAD["📱 iPad 4 (iOS 10.3.3)<br/>home-screen icon"]
+    APPS["🟩 Apps Script<br/>list + calendar"]
+    HTML == "commit → build (~60 s)" ==> PAGES
+    PAGES == "first load,<br/>full reload at 4:00" ==> IPAD
+    GS -. "pasted by hand<br/>+ new deployment version" .-> APPS
 ```
 
 ---
@@ -289,23 +359,35 @@ From the repo root, Node 22+. No network, no Google account, no browser — deta
 
 | File                               | Tests | Scope                                                  |
 | ---------------------------------- | ----- | ------------------------------------------------------ |
-| `tests/test-panel.js`              | 56    | rotation, night mode, weather, theme, iOS 10 compatibility |
-| `tests/test-todo-shopping-list.js` | 36    | Google script, list view, JSONP, layout on iOS 10      |
+| `tests/test-panel.js`              | 71    | rotation, night mode, weather, theme, iOS 10 compatibility |
+| `tests/test-todo-shopping-list.js` | 59    | Todoist script, list view, JSONP, layout on iOS 10     |
 | `tests/test-calendar.js`           | 33    | calendar script, calendar view, DST                    |
+| `tests/test-segments.js`           | 13    | range segments, headers, smaller tiles, page name      |
+| `tests/test-list-pick.js`          | 8     | `2w1 / Zakupy / ToDo` segment                          |
+| `tests/test-sheet.js`              | 6     | Sheet script (`Sheet.gs`) compatible with the panel    |
+| `tests/test-people.js`             | 7     | `PEOPLE`: calendar labels and colours                  |
+| `tests/test-icons.js`              | 2     | home-screen and tab icons                              |
+
+Layout in a browser (Playwright, 1024×768, both themes): `npm run layout`.<br>
+README screenshots (`docs/screens/`, test data): `npm run screens`.
 
 ---
 
 ## 🗺️ Roadmap
 
-| Stage | Feature                     | Status      | Notes                                                        |
-| ----- | --------------------------- | ----------- | ------------------------------------------------------------ |
-| **1** | Weather + forecast          | ✅ Done      | —                                                            |
-| **A** | View rotation + night mode  | ✅ Done      | —                                                            |
-| **—** | Light/dark theme            | ✅ Done      | —                                                            |
-| **B** | Calendar                    | ✅ Done      | own Google account + separate Apps Script, JSONP, key only on the iPad |
-| **C** | Shopping/ToDo               | ✅ Done      | Google Sheet + Apps Script, JSONP, key stored only on the iPad |
-| **2** | Rain radar                  | 📋 Planned  | RainViewer or IMGW; needs a map library, uncertain on iOS 10 |
-| **3** | City search                 | 🅿️ Parked   | text field + Open-Meteo geocoding API                        |
+| Feature                         | Status      | Notes                                                                 |
+| ------------------------------- | ----------- | --------------------------------------------------------------------- |
+| Weather + forecast              | ✅ Done      | —                                                                     |
+| View rotation + night mode      | ✅ Done      | —                                                                     |
+| Light/dark theme                | ✅ Done      | —                                                                     |
+| Calendar                        | ✅ Done      | home panel's Gmail account + separate Apps Script, `PEOPLE`, key only on the iPad |
+| Shopping/ToDo                   | ✅ Done      | Google Sheet + Apps Script, JSONP, key stored only on the iPad        |
+| List on Todoist instead of the sheet | ✅ Done | Todoist + Apps Script; the sheet stays as an alternative (`Sheet.gs`) |
+| Screen off at night             | 📋 Planned  | a small iPad app on a free Apple ID, refreshed by Sideloadly on a Mac mini (2012); a web page cannot keep iOS 10 awake |
+| Sheet ↔ Todoist sync            | 📋 Planned  | new sheet items → Todoist, ticks both ways                            |
+| Own server                      | 📋 Planned  | n8n on a VPS holds the tokens, panel on its own address               |
+| Rain radar                      | 📋 Planned  | RainViewer or IMGW; needs a map library, uncertain on iOS 10          |
+| City search                     | 🅿️ Parked   | text field + Open-Meteo geocoding API                                 |
 
 ---
 

@@ -66,7 +66,7 @@ t(26, "po pelnej petli wraca do pogody, nie zatrzymuje sie", function () {
 
 t(27, "przelaczenie widoku nie zostawia osieroconych wezlow", function () {
   ok(/\.innerHTML = /.test(SRC), "render przez innerHTML");
-  /* jedyny wyjatek: tag <script> transportu JSONP (etap C), sprzatany po kazdej odpowiedzi */
+  /* jedyny wyjatek: tag <script> transportu JSONP (lista Zakupy/ToDo i kalendarz), sprzatany po kazdej odpowiedzi */
   var jsonp = SRC.match(/function jsonpRequest[\s\S]*?\n\}\n/);
   ok(jsonp, "jsonpRequest istnieje");
   ok(/removeChild\(tag\)/.test(jsonp[0]), "JSONP usuwa swoj tag");

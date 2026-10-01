@@ -64,7 +64,7 @@ When a decision is replaced, the old row stays and gets **Superseded by #N**.
 
 | #  | Decision | Why | Rejected alternative |
 | -- | -------- | --- | -------------------- |
-| 35 | Separate Google account for the panel (`puxle.home.panel`), invited to chosen events | only what is shared on purpose reaches the wall | reading Em's or Dorota's own calendars |
+| 35 | Separate Google account for the panel (dedicated, not personal), invited to chosen events | only what is shared on purpose reaches the wall | reading Em's or Dorota's own calendars |
 | 36 | Separate Apps Script project on that account (`apps-script/Calendar.gs`), second secret URL on the iPad (`gcalUrl`) | the script can only see the panel calendar; the list and calendar fail independently | calendar code in the Zakupy script with the panel calendar shared to Em's account — that script would get access to all of Em's calendars |
 | 37 | Invitations: "Only if the sender is known" + E and D in the panel account's contacts | invites land without accepting, strangers' invites do not | "From everyone" |
 | 38 | Tags by creator: E green, D blue, anyone else = login before `@`; E/D addresses live in Script Properties | who set it up is visible at a glance; no address in the public repo or in the response | full e-mail — too long for a 2 m read |
@@ -80,3 +80,15 @@ When a decision is replaced, the old row stays and gets **Superseded by #N**.
 | #  | Decision | Why | Rejected alternative |
 | -- | -------- | --- | -------------------- |
 | 43 | Add an `onEdit` simple trigger: ticking column A by hand writes the time into D, unticking clears D (partly reverses #17's "no triggers") | unticking in the Sheet left the old date in D, so a re-ticked item vanished at once instead of staying until midnight; script writes (iPad taps) do not fire `onEdit`, so the two paths never clash | formula `=IF(A4; IF(D4=""; NOW(); D4); "")` with iterative calculation — the iPad tap overwrites it, it breaks on sort/copy and cannot be unit-tested / clean-up on each fetch — fails if unticked and re-ticked between fetches |
+
+---
+
+## Segments, list picker, sheet fallback, PEOPLE — 2026-09-30
+
+| #  | Decision | Why | Rejected alternative |
+| -- | -------- | --- | -------------------- |
+| 44 | Segment buttons `Jutro / 3 dni / 5 dni / 7 dni` instead of dropdowns, above "Dzisiaj" in both views (supersedes #40's dropdown) | iOS 10 shows a `<select>` as a native popover with tall empty rows; one tap instead of two; same place in every view | styling the `<select>` — iOS draws the popover itself |
+| 45 | List picker `2w1 / Zakupy / ToDo`; one list spreads over two columns | a single long list fits 14 items without `+N więcej` | one full-width column (7 items) |
+| 46 | `apps-script/Sheet.gs`: the last Sheet backend adapted to the current panel (`id` = row number); switch = paste into `Code.gs` + new version | going back from Todoist without touching the iPad or reverting the UI | restoring the whole repo at tag `v0.3.2-arkusz` — loses every later UI change |
+| 47 | Calendar tags from Script Property `PEOPLE` (`address=label:#rrggbb, …`), colour sent with each event; `EMAIL_E` / `EMAIL_D` still read as a fallback (supersedes #38's fixed E/D) | anyone can set their own people and colours without editing code; the public repo holds no names or addresses | a git-ignored config file — GitHub Pages only serves what is in the repo, so the iPad would never get it |
+| 48 | `EMAIL_E` / `EMAIL_D` no longer read; people come only from `PEOPLE` (supersedes the fallback in #47) | one way to configure, simpler docs and code; `PEOPLE` is already set on the panel account | keeping the fallback — dead code nobody uses |

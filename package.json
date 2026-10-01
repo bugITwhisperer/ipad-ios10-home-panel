@@ -4,7 +4,8 @@
   "description": "Tests for the iPad wall panel. The panel itself has no dependencies.",
   "scripts": {
     "test": "node --test",
-    "layout": "node tests/layout-check.js"
+    "layout": "node tests/layout-check.js",
+    "screens": "node tests/readme-screens.js"
   },
   "devDependencies": {
     "playwright": "^1.56.0"

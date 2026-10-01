@@ -1,6 +1,6 @@
 /* Calendar view. Run from the repo root:  node --test
    Numbers match the agreed test list (A1–A6 script, B7–B29 panel, 30 = whole suite).
-   Extra A-tests (A0, A7, A8) carry over the stage C security rules to the new script.
+   Extra A-tests (A0, A7, A8) carry over the Shopping/ToDo list script security rules to the new script.
    Manual tests M1–M7 (iPad) are not here. */
 "use strict";
 process.env.TZ = "Europe/Warsaw";
@@ -83,7 +83,7 @@ test("A1 range: today 00:00 -> today + 8 days 00:00 (today + 7 more days)", func
   assert.equal(d.calls.getEvents[0].to.getTime(), r.end.getTime());
 });
 
-test("A2 each event has exactly title, start, end, allDay, who", function () {
+test("A2 each event has exactly title, start, end, allDay, who, color", function () {
   var g = h.loadCalScript();
   var out = g.handle({ key: "s3cret" }, calDeps([
     gEv("Weterynarz", waw("2026-09-26T10:00:00"), waw("2026-09-26T11:00:00"), [EM]),
@@ -91,8 +91,8 @@ test("A2 each event has exactly title, start, end, allDay, who", function () {
   ]));
   assert.equal(out.ok, true);
   same(out.events, [
-    { title: "Weterynarz", start: "2026-09-26T10:00", end: "2026-09-26T11:00", allDay: false, who: "E" },
-    { title: "Urlop", start: "2026-09-28", end: "2026-09-30", allDay: true, who: "D" }
+    { title: "Weterynarz", start: "2026-09-26T10:00", end: "2026-09-26T11:00", allDay: false, who: "E", color: "" },
+    { title: "Urlop", start: "2026-09-28", end: "2026-09-30", allDay: true, who: "D", color: "" }
   ]);
 });
 
@@ -313,28 +313,21 @@ test("B19 overflow hides struck-through events first", function () {
   same(titles(r2.shown), ["n1", "n2", "n3"], "no past ones -> cut from the end");
 });
 
-test("B20 tags: E green, D blue, login plain", function () {
+test("B20 tags: colour from the script (PEOPLE), login plain; old E/D defaults green / blue", function () {
   var x = calState([
-    ev("a", "2026-09-25T19:00", "2026-09-25T20:00", "E"),
-    ev("b", "2026-09-25T20:00", "2026-09-25T21:00", "D"),
+    { title: "a", start: "2026-09-25T19:00", end: "2026-09-25T20:00", allDay: false, who: "E", color: "#2e9e5b" },
+    { title: "b", start: "2026-09-25T20:00", end: "2026-09-25T21:00", allDay: false, who: "D", color: "#2f6fd1" },
     ev("c", "2026-09-25T21:00", "2026-09-25T22:00", "jan.kowalski")
   ]);
   var html = x.p.calHtml(x.cs, NOW, "tomorrow", 5);
-  assert.match(html, /<span class="tag tag-e">E<\/span>/);
-  assert.match(html, /<span class="tag tag-d">D<\/span>/);
+  assert.match(html, /<span class="tag" style="background-color:#2e9e5b">E<\/span>/);
+  assert.match(html, /<span class="tag" style="background-color:#2f6fd1">D<\/span>/);
   assert.match(html, /<span class="tag tag-x">jan\.kowalski<\/span>/);
-  var css = h.readRepoFile("index.html").match(/<style>([\s\S]*?)<\/style>/)[1];
-  assert.match(css, /\.tag-e\s*\{[^}]*background-color:\s*#[0-9a-f]{3,6}/i, ".tag-e has a colour");
-  assert.match(css, /\.tag-d\s*\{[^}]*background-color:\s*#[0-9a-f]{3,6}/i, ".tag-d has a colour");
-  var e = css.match(/\.tag-e\s*\{[^}]*background-color:\s*(#[0-9a-f]{3,6})/i)[1];
-  var d = css.match(/\.tag-d\s*\{[^}]*background-color:\s*(#[0-9a-f]{3,6})/i)[1];
-  function rgb(hex) {
-    hex = hex.slice(1); if (hex.length === 3) hex = hex.replace(/./g, "$&$&");
-    return [0, 2, 4].map(function (i) { return parseInt(hex.substr(i, 2), 16); });
-  }
-  var ge = rgb(e), bd = rgb(d);
-  assert.ok(ge[1] > ge[0] && ge[1] > ge[2], "E is green (" + e + ")");
-  assert.ok(bd[2] > bd[0] && bd[2] > bd[1], "D is blue (" + d + ")");
+  var g = h.loadCalScript();
+  function rgb(hex) { return [1, 3, 5].map(function (i) { return parseInt(hex.substr(i, 2), 16); }); }
+  var ge = rgb(g.PALETTE[0]), bd = rgb(g.PALETTE[1]);
+  assert.ok(ge[1] > ge[0] && ge[1] > ge[2], "first palette colour (old E) is green");
+  assert.ok(bd[2] > bd[0] && bd[2] > bd[1], "second palette colour (old D) is blue");
 });
 
 test("B21 title and login are shown as text, never as HTML", function () {

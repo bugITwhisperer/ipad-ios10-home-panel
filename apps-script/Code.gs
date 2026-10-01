@@ -5,7 +5,8 @@
    Data comes from Todoist (two shared projects: Zakupy, ToDo). The script is
    the middleman, so the Todoist token never reaches the iPad or the repo.
    The Sheet stays as a backup only (onEdit below still keeps it tidy); going
-   back to it = restore Code.gs + index.html from git (commit 68dc512).
+   back to it = paste apps-script/Sheet.gs here instead + new deployment version
+   (same URL and key, nothing to change on the iPad). See README.
 
    Script Properties (Project Settings -> Script Properties):
      KEY               key the iPad sends (run generateKey() to create it)

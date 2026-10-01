@@ -185,8 +185,6 @@ html, body {
   padding: 1px 8px; margin-left: 9px; border-radius: 5px;
   vertical-align: 3px; color: #ffffff;
 }
-.tag-e { background-color: #2e9e5b; }
-.tag-d { background-color: #2f6fd1; }
 .tag-x { background-color: #2b3a4d; color: #b9c9db; font-weight: 400; }
 
 /* ---------- light theme: dimmed grey, easy on an old LCD in a room;
@@ -314,7 +312,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-09-30.7";
+var APP_VERSION = "2026-09-30.8";
 
 var LAT = 51.2465;
 var LON = 22.5684;
@@ -901,7 +899,7 @@ function calDayHead(iso) {
    now = null for future days (nothing there is over yet). */
 function calItem(e, day, now) {
   var next = addDays(day, 1);
-  var row = { title: String(e.title || ""), who: String(e.who || ""),
+  var row = { title: String(e.title || ""), who: String(e.who || ""), color: String(e.color || ""),
               allDay: false, time: "", key: "", past: false };
   if (e.allDay) {
     if (!(e.start <= day && e.end > day)) return null;
@@ -1002,16 +1000,20 @@ function calCollapseIfIdle(cs, state, now) {
   return cs;
 }
 
-function tagHtml(who) {
+/* label + colour come from the calendar script (Script Property PEOPLE);
+   anything that is not a plain #rrggbb falls back to the grey tag */
+function tagHtml(who, color) {
   if (!who) return "";
-  var cls = who === "E" ? "tag-e" : who === "D" ? "tag-d" : "tag-x";
-  return '<span class="tag ' + cls + '">' + escapeHtml(who) + "</span>";
+  if (/^#[0-9a-fA-F]{6}$/.test(color || "")) {
+    return '<span class="tag" style="background-color:' + color + '">' + escapeHtml(who) + "</span>";
+  }
+  return '<span class="tag tag-x">' + escapeHtml(who) + "</span>";
 }
 
 function evHtml(it) {
   return '<div class="ev' + (it.past ? " past" : "") + '">' +
     '<span class="ev-time">' + escapeHtml(it.time) + "</span>" +
-    '<span class="ev-title">' + escapeHtml(it.title) + "</span>" + tagHtml(it.who) + "</div>";
+    '<span class="ev-title">' + escapeHtml(it.title) + "</span>" + tagHtml(it.who, it.color) + "</div>";
 }
 
 function calDayHtml(cs, day, items, maxRows) {
@@ -1477,7 +1479,7 @@ if (typeof module !== "undefined") {
     buildJsonpUrl: buildJsonpUrl, jsonpRequest: jsonpRequest,
     CAL_STORAGE_KEY: CAL_STORAGE_KEY, CAL_MAX_ROWS: CAL_MAX_ROWS,
     getSavedCalUrl: getSavedCalUrl, saveCalUrl: saveCalUrl, calScreen: calScreen,
-    calDayHead: calDayHead, calItem: calItem, calToday: calToday, calDays: calDays,
+    calDayHead: calDayHead, calItem: calItem, tagHtml: tagHtml, calToday: calToday, calDays: calDays,
     limitItems: limitItems, createCalState: createCalState, needsCalFetch: needsCalFetch,
     onCalResult: onCalResult, calExpand: calExpand, calCollapseIfIdle: calCollapseIfIdle,
     calHtml: calHtml,

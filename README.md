@@ -18,7 +18,6 @@ _Napisane z Claude (Anthropic)_
 - [Pogoda](#-pogoda)
 - [Lista Zakupy/ToDo](#-lista-zakupytodo)
 - [Kalendarz](#-kalendarz)
-- [Arkusz Google](#-arkusz-google)
 - [Tryb nocny](#-tryb-nocny)
 - [Cykle odświeżania](#-cykle-odświeżania)
 - [Zmiana miasta](#-zmiana-miasta)
@@ -33,17 +32,21 @@ _Napisane z Claude (Anthropic)_
 ## 🤔 O co chodzi
 
 Statyczna strona napisana pod starego iPada, który nie jest już wspierany przez Apple: <br>
-iPad 4. generacji (**A1458**, 2012) z **iOS 10**<br>
+iPad 4. generacji (**A1458**, 2012) z **iOS 10.3.3**<br>
 <br>
-Strona napisana w starej składni, którą Safari jeszcze rozumie:
+Panel domowy na ścianę z trzema widokami - pogoda, lista Zakupy/ToDo i kalendarz - napisany w składni, którą Safari na iOS 10.3.3 jeszcze rozumie.
 
-| Warstwa      | Wybór                                | Dlaczego                             |
-| ------------ | ------------------------------------ | ------------------------------------ |
-| **Dane**     | [Open-Meteo](https://open-meteo.com) | darmowe API                          |
-| **Lista**    | Arkusz Google + Apps Script          | edycja w apce Sheets, bez serwera    |
-| **Hosting**  | GitHub Pages                         | statyczny HTML                       |
-| **Kod**      | jeden plik `index.html`              | HTML + CSS + JS razem                |
-| **Składnia** | ES5, stary CSS                       | wszystko nowsze wywala się na iOS 10 |
+| Widok                 | Źródło danych                                                   | Dlaczego                                 |
+| --------------------- | --------------------------------------------------------------- | ---------------------------------------- |
+| **Pogoda**            | [Open-Meteo](https://open-meteo.com)                            | darmowe API, bez klucza                  |
+| **Lista Zakupy/ToDo** | Todoist + Apps Script                                           | edycja w apce Todoist, bez serwera       |
+| **Kalendarz**         | Kalendarz Google konta gmail panelu domowego + Apps Script      | na panel trafia tylko to, na co konto zaproszono |
+
+| Co           | Wybór                   | Dlaczego                             |
+| ------------ | ----------------------- | ------------------------------------ |
+| **Hosting**  | GitHub Pages            | statyczny HTML                       |
+| **Kod**      | jeden plik `index.html` | HTML + CSS + JS razem                |
+| **Składnia** | ES5, stary CSS          | wszystko nowsze wywala się na iOS 10 |
 
 ---
 
@@ -51,11 +54,11 @@ Strona napisana w starej składni, którą Safari jeszcze rozumie:
 
 Panel przełącza się sam między trzema widokami:
 
-| Widok         | Czas na ekranie | Stan                 |
-| ------------- | --------------- | -------------------- |
-| **Pogoda**    | 10 min          | ✅ działa             |
-| **Kalendarz** | 5 min           | ✅ działa             |
-| **Lista Zakupy/Todo**    | 5 min           | ✅ działa             |
+| Widok                 | Czas na ekranie |
+| --------------------- | --------------- |
+| **Pogoda**            | 10 min          |
+| **Kalendarz**         | 5 min           |
+| **Lista Zakupy/ToDo** | 5 min           |
 
 - pełna pętla wyświetlania trwa **20 minut**
 - zakładki u góry pozwalają przełączyć widok ręcznie
@@ -65,6 +68,10 @@ Panel przełącza się sam między trzema widokami:
 
 ## 👀 Pogoda
 
+| Jasny | Ciemny |
+| --- | --- |
+| ![Widok pogody - jasny](docs/screens/pogoda.png) | ![Widok pogody - ciemny](docs/screens/pogoda-dark.png) |
+
 **Pogoda bieżąca** u góry: temperatura, ikona, wiatr, opady
 
 Pod spodem **dwa paski godzinowe naraz**:
@@ -72,7 +79,7 @@ Pod spodem **dwa paski godzinowe naraz**:
 | Pasek     | Zakres                                      | Sterowanie      |
 | --------- | ------------------------------------------- | --------------- |
 | **Górny** | dzisiaj, od bieżącej godziny do 23:00       | zawsze widoczny |
-| **Dolny** | jutro godzinowo (od wschodu) albo 3/5/7 dni | dropdown        |
+| **Dolny** | jutro godzinowo (od wschodu) albo 3/5/7 dni | segment `Jutro / 3 dni / 5 dni / 7 dni` nad „DZISIAJ” |
 
 Każdy kafelek: **temperatura · ikona · szansa opadów · wiatr**
 
@@ -86,23 +93,60 @@ Każdy kafelek: **temperatura · ikona · szansa opadów · wiatr**
 
 ## 📝 Lista Zakupy/ToDo
 
-Dwie kolumny obok siebie: **Zakupy** i **ToDo**, z dwóch zakładek jednego arkusza Google (`Zakupy`, `To do`).
-Dopisywanie i edycja w apce Google Sheets - iPad tylko **wyświetla i odhacza**.
+| Jasny | Ciemny |
+| --- | --- |
+| ![Widok Zakupy/ToDo - jasny](docs/screens/lista.png) | ![Widok Zakupy/ToDo - ciemny](docs/screens/lista-dark.png) |
+
+Dwie listy: **Zakupy** i **ToDo**. Źródłem jest **Todoist** (albo, jako alternatywa, arkusz Google, patrz [Todoist vs Arkusz Google](#todoist-vs-arkusz-google)).
+Dopisywanie i edycja w apce Todoist (lub Sheets) - iPad tylko **wyświetla i odhacza**.
+
+Segment `2w1 | Zakupy | ToDo` nad listami:
+- **2w1** - obie listy obok siebie, 7 pozycji na kolumnę
+- **Zakupy** / **ToDo** - jedna lista w dwóch kolumnach (1-7 i 8-14)
 
 | Co                     | Jak                                                                  |
 | ---------------------- | -------------------------------------------------------------------- |
-| **Odhaczenie**         | tapnięcie w pozycję → przekreślenie od razu, zapis w arkuszu w tle   |
-| **Cofnięcie**          | ponowne tapnięcie                                                    |
+| **Odhaczenie**         | tapnięcie w pozycję → przekreślenie od razu, zapis w tle             |
+| **Cofnięcie**          | ponowne tapnięcie (poza zadaniami cyklicznymi w Todoist)             |
 | **Błąd zapisu**        | przekreślenie się cofa, komunikat „Nie udało się zapisać”            |
 | **Zrobione**           | widoczne do północy (czas Warszawy), potem znikają                   |
-| **Długa lista**        | 7 pozycji na kolumnę, dalej `+N więcej` - tapnięcie rozwija          |
+| **Długa lista**        | dalej `+N więcej` - tapnięcie rozwija, zwija się po 5 min bez dotyku |
 | **Długi tekst**        | zawija się do kolejnych linii, nic nie jest ucinane                  |
 | **Pobieranie**         | przy wejściu w widok (rotacja albo zakładka), nie z timera           |
 | **Brak sieci**         | zostaje ostatnia lista z dopiskiem `offline`                         |
 
 ---
 
-### Arkusz Google
+### Todoist vs Arkusz Google
+
+|                         | **Todoist** (używany)                                   | **Arkusz Google** (alternatywa)                   |
+| ----------------------- | ------------------------------------------------------- | ------------------------------------------------- |
+| **Skrypt**              | `apps-script/Code.gs`                                   | `apps-script/Sheet.gs`                            |
+| **Edycja**              | apka Todoist                                            | apka Google Sheets                                |
+| **Listy**               | projekty `Zakupy` i `ToDo` (udostępnione)               | zakładki `Zakupy` i `To do`                       |
+| **Co pokazuje**         | bez daty, na dziś, zaległe + zrobione dziś              | wszystko niezrobione + zrobione dziś              |
+| **Zadania cykliczne**   | odhaczone dziś widoczne, nie da się ich cofnąć          | brak                                              |
+| **Konfiguracja**        | `KEY`, `TODOIST_TOKEN`, `ZAKUPY_PROJECT_ID`, `TODO_PROJECT_ID` | `KEY`                                      |
+| **Id pozycji**          | id zadania w Todoist                                    | numer wiersza                                     |
+
+Oba skrypty odpowiadają panelowi w tym samym kształcie, więc przełączenie nie wymaga zmian na iPadzie.
+
+#### Todoist
+
+Skrypt pośredniczy między iPadem a Todoist i trzyma token, więc token nie trafia ani na iPada, ani do repo.
+
+Script Properties (`Project Settings → Script Properties`):
+
+| Nazwa               | Wartość                                                                  |
+| ------------------- | ------------------------------------------------------------------------ |
+| `KEY`               | klucz, który wysyła iPad (tworzy go `generateKey`)                       |
+| `TODOIST_TOKEN`     | Todoist → `Ustawienia → Integracje → Programista → Token API`            |
+| `ZAKUPY_PROJECT_ID` | id projektu `Zakupy`                                                     |
+| `TODO_PROJECT_ID`   | id projektu `ToDo`                                                       |
+
+Po ustawieniu: raz uruchomić `smokeTest` i sprawdzić Execution log.
+
+#### Arkusz Google
 
 Szablon „Zakupy-ToDo-list” z checkboxami, dane od wiersza 4:
 
@@ -117,54 +161,84 @@ Kolumnę **D** wypełnia skrypt wpisując godzinę oznaczenia zadania/zakupu jak
 <br>
 Strefa czasowa arkusza: `Plik → Ustawienia → (GMT+01:00) Warsaw`
 
-### Skrypt Google (`apps-script/Code.gs`)
+Ostatnia wersja sprzed Todoist: tag `v0.3.2-arkusz`. `Sheet.gs` to ta sama wersja, dostosowana do obecnego panelu.
 
-1. w arkuszu kliknąć: `Rozszerzenia → Apps Script
-2. wkleić całą zawartość `apps-script/Code.gs`
+#### Wdrożenie skryptu
+
+1. w arkuszu kliknąć: `Rozszerzenia → Apps Script`
+2. wkleić całą zawartość `apps-script/Code.gs` (Todoist) albo `apps-script/Sheet.gs` (arkusz) jako `Code.gs`
 3. z dropdownu wybrać `generateKey`
-3. kliknąć `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone** - nie „Anyone with Google account”: "aplikacja z ikony" iPada nie jest zalogowana do Google
-4. przy każdej zmianie kodu skryptu: `Deploy → Manage deployments → ✏️ → Version: New version`
-5. na iPadzie, w zakładce Zakupy/ToDo: wkleić `https://script.google.com/macros/s/…/exec?key=KLUCZ` → `Zapisz`
+4. kliknąć `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone** - nie „Anyone with Google account”: "aplikacja z ikony" iPada nie jest zalogowana do Google
+5. przy każdej zmianie kodu skryptu: `Deploy → Manage deployments → ✏️ → Version: New version`
+6. na iPadzie, w zakładce Zakupy/ToDo: wkleić `https://script.google.com/macros/s/…/exec?key=KLUCZ` → `Zapisz`
 
 > 🔐 Klucz zapisywany jest w pamięci przeglądarki na iPadzie.<br>
 > Link „zmień adres” pod listą pozwala go podmienić. Gdy adres wycieknie: ponownie `generateKey` + nowa wersja wdrożenia
 
 [`health-check/list.html`](https://bugitwhisperer.github.io/ipad-ios10-home-panel/health-check/list.html) - health check: czy iPad łączy się ze skryptem Google (adres bez klucza wystarczy, odpowiedź `auth` też oznacza, że połączenie działa)
 
+#### Przełączanie Todoist ↔ arkusz
+
+1. w projekcie Apps Script przy arkuszu: podmienić całą treść `Code.gs` na drugi skrypt (`Sheet.gs` albo `Code.gs` z repo)
+2. `Deploy → Manage deployments → ✏️ → Version: New version`
+3. na iPadzie nic nie trzeba zmieniać: adres i klucz zostają te same
+
 ## 📅 Kalendarz
 
-Wydarzenia z kalendarza osobnego konta Google panelu (`puxle.home.panel`).<br>
+| Jasny | Ciemny |
+| --- | --- |
+| ![Widok kalendarza - jasny](docs/screens/kalendarz.png) | ![Widok kalendarza - ciemny](docs/screens/kalendarz-dark.png) |
+
+Wydarzenia z kalendarza konta gmail panelu domowego (np. `panel.domowy@…`, osobne konto, nie prywatne).<br>
 Na panel trafia tylko to, do czego to konto zostanie **zaproszone** - iPad tylko wyświetla.
 
 | Co                       | Jak                                                                     |
 | ------------------------ | ----------------------------------------------------------------------- |
 | **Lewa kolumna**         | Dziś - zakończone wydarzenia zostają **przekreślone** do północy        |
-| **Prawa kolumna**        | dropdown `Jutro / 3 dni / 5 dni / 7 dni`, liczone od jutra              |
-| **Kto**                  | znacznik po twórcy: **E** zielony, **D** niebieski, inni - login sprzed `@` |
+| **Prawa kolumna**        | segment `Jutro / 3 dni / 5 dni / 7 dni` nad kolumnami, liczone od jutra |
+| **Kto**                  | znacznik po twórcy: etykieta i kolor z `PEOPLE` (niżej), inni - login sprzed `@` |
 | **Całodniowe**           | na górze dnia jako „cały dzień”                                         |
 | **Przez północ**         | w obu dniach, drugiego dnia jako „do 02:00”                             |
 | **Dużo wydarzeń**        | 5 na dzień, potem `+N więcej` - najpierw chowają się przekreślone       |
 | **Długi tytuł**          | zawija się, nic nie jest ucinane                                        |
-| **Pobieranie**           | przy wejściu w widok, 8 dni naraz; dropdown filtruje bez pobierania     |
+| **Pobieranie**           | przy wejściu w widok, 8 dni naraz; segment filtruje bez pobierania      |
 | **Brak sieci**           | zostają ostatnie dane z dopiskiem `offline - aktualizacja HH:MM`        |
 
-### Konto panelu
+### Konto gmail panelu domowego
 
 `Ustawienia → Ustawienia wydarzeń → Dodawaj zaproszenia do mojego kalendarza → Tylko jeśli nadawca jest znany`<br>
-+ adresy E i D dodane do kontaktów konta panelu. Strefa czasowa: Warszawa.
++ adresy osób z `PEOPLE` dodane do kontaktów konta gmail panelu domowego. Strefa czasowa: Warszawa.
 
 ### Skrypt Google (`apps-script/Calendar.gs`)
 
-Osobny projekt, na koncie panelu - widzi tylko kalendarz panelu.
+Osobny projekt, na koncie gmail panelu domowego - widzi tylko jego kalendarz.
 
-1. zalogowana na konto panelu: [script.google.com](https://script.google.com) → `Nowy projekt`, wkleić całą zawartość `apps-script/Calendar.gs`
+1. zalogowana na konto gmail panelu domowego: [script.google.com](https://script.google.com) → `Nowy projekt`, wkleić całą zawartość `apps-script/Calendar.gs`
 2. `Ustawienia projektu` → strefa czasowa `(GMT+01:00) Warsaw`
-3. `Ustawienia projektu → Właściwości skryptu`: `EMAIL_E` = adres E, `EMAIL_D` = adres D (adresy nie trafiają do repo)
+3. `Ustawienia projektu → Właściwości skryptu`: dodać `PEOPLE` (opcjonalne, patrz niżej)
 4. z dropdownu wybrać `generateKey` → `Uruchom`, zaakceptować dostęp do kalendarza, skopiować klucz z logu
 5. `Deploy → New deployment → Web app`, **Execute as: Me**, **Who has access: Anyone**
 6. na iPadzie, w zakładce Kalendarz: wkleić `https://script.google.com/macros/s/…/exec?key=KLUCZ` → `Zapisz`
 
 > 🔐 Adres kalendarza ma w pamięci iPada własne miejsce (`gcalUrl`) - nie nadpisuje adresu listy.
+
+### Osoby i kolory (`PEOPLE`)
+
+Kto dostaje jaki znacznik, ustawia się poza kodem, we **Właściwościach skryptu** projektu kalendarza:
+`Apps Script → ⚙️ Ustawienia projektu → Właściwości skryptu → Dodaj właściwość skryptu`
+
+| Właściwość | Wartość                                                         |
+| ---------- | --------------------------------------------------------------- |
+| `PEOPLE`   | `adres=etykieta:#kolor, adres=etykieta:#kolor, …`               |
+
+Przykład: `anna@example.com=A:#2e9e5b, piotr@example.com=P`
+
+- **adres** - e-mail twórcy wydarzenia (wielkość liter bez znaczenia)
+- **etykieta** - tekst znacznika, np. litera albo imię
+- **kolor** - opcjonalny, tylko `#rrggbb`; bez niego (albo gdy jest błędny) kolejny z palety: zielony, niebieski, pomarańczowy, fioletowy, różowy, morski
+- osoby spoza `PEOPLE` → szary znacznik z loginem sprzed `@`; bez `PEOPLE` wszyscy tak
+- po zmianie właściwości nie trzeba wdrażać nowej wersji - skrypt czyta je przy każdym pobraniu
+- adresy nie trafiają ani do repo, ani na iPada
 
 ---
 
@@ -222,43 +296,38 @@ Wyjście z trybu dostępu nadzorowanego: potrójne kliknięcie Home → `Rozpocz
 
 ## 🎯 Jak to działa
 
+**Skąd dane** - codzienna praca panelu:
+
 ```mermaid
-graph TD
-    subgraph REPO["🗂️ bugITwhisperer/ipad-ios10-home-panel"]
-        HTML["index.html<br/>HTML + CSS + JS w jednym pliku"]
-        GS["apps-script/Code.gs<br/>źródło skryptu Google"]
+graph LR
+    IPAD["📱 iPad 4 (iOS 10.3.3)"]
+    METEO["🌐 Open-Meteo"]
+    subgraph G1["🟩 Apps Script listy"]
+        CODE["Code.gs"] --> TODO["✅ Todoist<br/>Zakupy · ToDo"]
+        SHEET["Sheet.gs (alternatywa)"] -.-> ARK["Arkusz Google"]
     end
-
-    subgraph PAGES["☁️ GitHub Pages"]
-        SITE["bugitwhisperer.github.io<br/>/ipad-ios10-home-panel/"]
+    subgraph G2["🟩 Apps Script kalendarza<br/>konto gmail panelu domowego"]
+        CAL["Calendar.gs<br/>+ PEOPLE"] --> GCAL["📅 Kalendarz Google"]
     end
+    METEO -. "co 15 min" .-> IPAD
+    IPAD <-. "JSONP: lista + odhaczanie" .-> CODE
+    IPAD <-. "JSONP: wydarzenia" .-> CAL
+```
 
-    subgraph IPAD["📱 iPad 4 (iOS 10) na ścianie"]
-        ICON["Ikona na ekranie początkowym<br/>pełny ekran<br/>bez paska adresu"]
-        ROT["Rotacja widoków<br/>pogoda 10 min<br/>kalendarz 5 min<br/>lista zakupów/todo 5 min"]
-        GUIDED["Dostęp nadzorowany<br/>Home zablokowany<br/>wyjście na kod"]
-        ICON --> ROT --> GUIDED
+**Wdrożenie** - jak kod trafia na iPada i do Google:
+
+```mermaid
+graph LR
+    subgraph REPO["🗂️ repo"]
+        HTML["index.html<br/>HTML + CSS + JS"]
+        GS["apps-script/*.gs"]
     end
-
-    API["🌐 Open-Meteo API<br/>bez klucza"]
-
-    subgraph GOOGLE["🟩 Google"]
-        SCRIPT["Apps Script<br/>Web App + klucz"]
-        SHEET["Arkusz<br/>Zakupy · To do"]
-        SCRIPT <--> SHEET
-    end
-
-    HTML == "commit → build (~60 s)" ==> SITE
-    SITE == "pierwsze wczytanie" ==> ICON
-    API -. "co 15 min: dane pogodowe" .-> ICON
-    SITE -. "o 4:00: pełne przeładowanie kodu" .-> ICON
-    ICON <-. "JSONP: lista i odhaczanie" .-> SCRIPT
-    GS -. "wklejany ręcznie" .-> SCRIPT
-
-    classDef repo fill:#1e3a5f,stroke:#4a90d9,color:#fff
-    classDef dev fill:#2d4a2d,stroke:#5aaa5a,color:#fff
-    class HTML,SITE,GS repo
-    class ICON,ROT,GUIDED dev
+    PAGES["☁️ GitHub Pages"]
+    IPAD["📱 iPad 4 (iOS 10.3.3)<br/>ikona na ekranie początkowym"]
+    APPS["🟩 Apps Script<br/>lista + kalendarz"]
+    HTML == "commit → build (~60 s)" ==> PAGES
+    PAGES == "pierwsze wczytanie,<br/>o 4:00 przeładowanie" ==> IPAD
+    GS -. "wklejane ręcznie<br/>+ nowa wersja wdrożenia" .-> APPS
 ```
 
 ---
@@ -278,8 +347,6 @@ Testy pilnują, żeby nic nowszego się nie wślizgnęło - statyczny skan odrzu
 | CSS custom properties (`--zmienna`)   | Wartości wpisane wprost                   |
 | `gap`, CSS grid, `clamp()`, `:is()`   | Marginesy, flexbox z prefiksem `-webkit-` |
 
-Przy wielodniowej pracy liczy się też to, czego **nie ma**: każdy timer trzymany jest w jednej zmiennej i czyszczony przed ustawieniem nowego, a widoki są chowane klasą zamiast usuwane z DOM.
-
 ---
 
 ## 🧪 Testy
@@ -292,20 +359,32 @@ Z głównego folderu, Node 22+. Bez sieci, bez konta Google, bez przeglądarki -
 
 | Plik                               | Testów | Zakres                                              |
 | ---------------------------------- | ------ | --------------------------------------------------- |
-| `tests/test-panel.js`              | 56     | rotacja, tryb nocny, pogoda, motyw, zgodność iOS 10 |
-| `tests/test-todo-shopping-list.js` | 36     | skrypt Google, widok listy, JSONP, układ na iOS 10  |
+| `tests/test-panel.js`              | 71     | rotacja, tryb nocny, pogoda, motyw, zgodność iOS 10 |
+| `tests/test-todo-shopping-list.js` | 59     | skrypt Todoist, widok listy, JSONP, układ na iOS 10 |
 | `tests/test-calendar.js`           | 33     | skrypt kalendarza, widok kalendarza, zmiana czasu   |
+| `tests/test-segments.js`           | 13     | segmenty zakresu, nagłówki, mniejsze kafelki, nazwa |
+| `tests/test-list-pick.js`          | 8      | segment `2w1 / Zakupy / ToDo`                       |
+| `tests/test-sheet.js`              | 6      | skrypt arkusza (`Sheet.gs`) zgodny z panelem        |
+| `tests/test-people.js`             | 7      | `PEOPLE`: etykiety i kolory w kalendarzu            |
+| `tests/test-icons.js`              | 2      | ikony ekranu początkowego i zakładki                |
+
+Układ w przeglądarce (Playwright, 1024×768, oba motywy): `npm run layout`.<br>
+Zrzuty do README (`docs/screens/`, dane testowe): `npm run screens`.
 
 ---
 
 ## 🗺️ Plany
 
-| Etap  | Funkcja                      | Stan           | Uwagi                                                              |
-| ----- | ---------------------------- | -------------- | ------------------------------------------------------------------ |
-| **1** | Pogoda + prognoza            | ✅ Gotowe       | —                                                                  |
-| **A** | Rotacja widoków + tryb nocny | ✅ Gotowe       | —                                                                  |
-| **—** | Motyw jasny/ciemny           | ✅ Gotowe       | —                                                                  |
-| **B** | Kalendarz                    | ✅ Gotowe       | osobne konto Google + osobny Apps Script, JSONP, klucz tylko na iPadzie |
-| **C** | Zakupy/ToDo                  | ✅ Gotowe       | arkusz Google + Apps Script, JSONP, klucz tylko na iPadzie         |
-| **2** | Radar opadów                 | 📋 Planowane   | RainViewer lub IMGW; wymaga biblioteki mapowej, na iOS 10 niepewne |
-| **3** | Wyszukiwarka miast           | 🅿️ Zaparkowane | Pole tekstowe + geocoding API Open-Meteo                           |
+| Funkcja                         | Stan           | Uwagi                                                                    |
+| ------------------------------- | -------------- | ------------------------------------------------------------------------ |
+| Pogoda + prognoza               | ✅ Gotowe       | —                                                                        |
+| Rotacja widoków + tryb nocny    | ✅ Gotowe       | —                                                                        |
+| Motyw jasny/ciemny              | ✅ Gotowe       | —                                                                        |
+| Kalendarz                       | ✅ Gotowe       | konto gmail panelu domowego + osobny Apps Script, `PEOPLE`, klucz tylko na iPadzie |
+| Lista Zakupy/ToDo               | ✅ Gotowe       | arkusz Google + Apps Script, JSONP, klucz tylko na iPadzie               |
+| Lista na Todoist zamiast arkusza | ✅ Gotowe      | Todoist + Apps Script; arkusz zostaje jako alternatywa (`Sheet.gs`)      |
+| Wygaszanie ekranu nocą          | 📋 Planowane   | mini-aplikacja na iPada z darmowym Apple ID, odświeżana przez Sideloadly na Mac mini (2012); strona WWW nie utrzyma iOS 10 w czuwaniu |
+| Synchronizacja arkusz ↔ Todoist | 📋 Planowane   | nowe pozycje z arkusza → Todoist, odhaczanie w obie strony               |
+| Własny serwer                   | 📋 Planowane   | n8n na VPS trzyma tokeny, panel pod własnym adresem                      |
+| Radar opadów                    | 📋 Planowane   | RainViewer lub IMGW; wymaga biblioteki mapowej, na iOS 10 niepewne       |
+| Wyszukiwarka miast              | 🅿️ Zaparkowane | pole tekstowe + geocoding API Open-Meteo                                 |
