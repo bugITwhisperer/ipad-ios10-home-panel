@@ -127,7 +127,7 @@ Segment `2w1 | Zakupy | ToDo` nad listami:
 | **Co pokazuje**         | bez daty, na dziś, zaległe + zrobione dziś              | wszystko niezrobione + zrobione dziś              |
 | **Zadania cykliczne**   | odhaczone dziś widoczne, nie da się ich cofnąć          | brak                                              |
 | **Konfiguracja**        | `KEY`, `TODOIST_TOKEN`, `ZAKUPY_PROJECT_ID`, `TODO_PROJECT_ID` | `KEY`                                      |
-| **Id pozycji**          | id zadania w Todoist                                    | numer wiersza                                     |
+| **Id pozycji**          | id zadania w Todoist                                    | UUID w kolumnie E, niezależne od numeru wiersza   |
 
 Oba skrypty odpowiadają panelowi w tym samym kształcie, więc przełączenie nie wymaga zmian na iPadzie.
 
@@ -150,15 +150,16 @@ Po ustawieniu: raz uruchomić `smokeTest` i sprawdzić Execution log.
 
 Szablon „Zakupy-ToDo-list” z checkboxami, dane od wiersza 4:
 
-| A  | B    | C              | D            |
-| -- | ---- | -------------- | ------------ |
-| ✓  | Date | Task / Item    | Completed at |
+| A  | B    | C              | D            | E                 |
+| -- | ---- | -------------- | ------------ | ----------------- |
+| ✓  | Date | Task / Item    | Completed at | Panel ID (auto)   |
 
 Kolumnę **D** wypełnia skrypt wpisując godzinę oznaczenia zadania/zakupu jako zrobionego:
 - na iPadzie
 - w apce Google Sheets
 - odznaczenie (na iPadzie lub w arkuszu) czyści kolumnę **D**, więc ponownie zaznaczona pozycja znów jest widoczna do północy (`onEdit` w skrypcie)
 <br>
+Kolumna **E** przechowuje automatycznie nadawane ID panelu. Nie edytuj jej ręcznie; podczas sortowania uwzględnij kolumnę E razem z danymi, aby ID pozostało przy właściwej pozycji.
 Strefa czasowa arkusza: `Plik → Ustawienia → (GMT+01:00) Warsaw`
 
 Ostatnia wersja sprzed Todoist: tag `v0.3.2-arkusz`. `Sheet.gs` to ta sama wersja, dostosowana do obecnego panelu.

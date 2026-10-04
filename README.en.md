@@ -125,7 +125,7 @@ Segment `2w1 | Zakupy | ToDo` above the lists:
 | **Shows**            | no date, due today, overdue + done today               | everything not done + done today            |
 | **Recurring tasks**  | ticked today stay visible, cannot be unticked          | none                                        |
 | **Configuration**    | `KEY`, `TODOIST_TOKEN`, `ZAKUPY_PROJECT_ID`, `TODO_PROJECT_ID` | `KEY`                               |
-| **Item id**          | Todoist task id                                        | row number                                  |
+| **Item id**          | Todoist task id                                        | UUID in column E, independent of row number |
 
 Both scripts answer the panel in the same shape, so switching needs no change on the iPad.
 
@@ -148,12 +148,13 @@ After setting them: run `smokeTest` once and read the Execution log.
 
 "To-do list" template with checkboxes, data from row 4:
 
-| A  | B    | C            | D                         |
-| -- | ---- | ------------ | ------------------------- |
-| ✓  | Date | Task / Item  | Completed at              |
+| A  | B    | C            | D                         | E               |
+| -- | ---- | ------------ | ------------------------- | --------------- |
+| ✓  | Date | Task / Item  | Completed at              | Panel ID (auto) |
 
 Column **D** is filled by the script — the time an item was ticked, including ticks made in the Sheets app.
 Unticking (on the iPad or in the Sheet) clears column **D**, so a re-ticked item is visible until midnight again (`onEdit` in the script).<br>
+Column **E** stores an automatically generated panel ID. Do not edit it; include column E when sorting so each ID stays with its item.
 Sheet time zone: `File → Settings → (GMT+01:00) Berlin`.
 
 Last pre-Todoist version: tag `v0.3.2-arkusz`. `Sheet.gs` is that version, adapted to the current panel.

@@ -180,13 +180,28 @@ test("A5c missing Todoist token or project id -> 'config' error, no calls", func
 
 test("A6 done=1 closes the task, done=0 reopens it", function () {
   var g = h.loadGScript();
-  var d = fakeDeps();
+  var d = fakeDeps({ active: [page([task("a1", "mleko", PZ)])] });
   same(g.handle({ key: "s3cret", tick: "zakupy", id: "a1", done: "1" }, d), { ok: true });
-  same(d.calls, [{ method: "POST", path: "/tasks/a1/close", params: {} }]);
+  same(d.calls.map(function (c) { return c.method + " " + c.path; }),
+    ["GET /tasks/filter", "POST /tasks/a1/close"]);
 
-  var d2 = fakeDeps();
+  var d2 = fakeDeps({ done: [donePage([doneTask("b7", "odkurzyć", PT, NOW)])] });
   same(g.handle({ key: "s3cret", tick: "todo", id: "b7", done: "0" }, d2), { ok: true });
-  same(d2.calls, [{ method: "POST", path: "/tasks/b7/reopen", params: {} }]);
+  same(d2.calls.map(function (c) { return c.method + " " + c.path; }),
+    ["GET /tasks/completed/by_completion_date", "POST /tasks/b7/reopen"]);
+});
+
+test("A6b tick cannot change a task in a different project", function () {
+  var g = h.loadGScript();
+  var close = fakeDeps({ active: [page([task("b7", "odkurzyć", PT)])] });
+  same(g.handle({ key: "s3cret", tick: "zakupy", id: "b7", done: "1" }, close),
+    { ok: false, error: "bad-tick" });
+  assert.equal(close.calls.filter(function (c) { return c.method === "POST"; }).length, 0);
+
+  var reopen = fakeDeps({ done: [donePage([doneTask("a1", "mleko", PZ, NOW)])] });
+  same(g.handle({ key: "s3cret", tick: "todo", id: "a1", done: "0" }, reopen),
+    { ok: false, error: "bad-tick" });
+  assert.equal(reopen.calls.filter(function (c) { return c.method === "POST"; }).length, 0);
 });
 
 test("A7 tick with a bad list, id or done returns an error and calls nothing", function () {

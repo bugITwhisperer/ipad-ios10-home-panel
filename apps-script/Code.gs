@@ -164,6 +164,26 @@ function doTick(p, deps) {
   if (typeof p.tick !== "string" || !hasOwn(LISTS, p.tick)) return bad;
   if (typeof p.id !== "string" || !TASK_ID_RE.test(p.id)) return bad;
   if (p.done !== "1" && p.done !== "0") return bad;
+  var candidates;
+  try {
+    if (p.done === "1") {
+      candidates = fetchAll(deps, "/tasks/filter", { query: FILTER }, "results");
+    } else {
+      var range = todayRange(deps.now, deps.dayOf);
+      candidates = fetchAll(deps, "/tasks/completed/by_completion_date",
+                            { since: range.since, until: range.until }, "items");
+    }
+  } catch (err) {
+    return todoistError(err);
+  }
+  var projectId = String(deps.projects[p.tick]), found = false, i;
+  for (i = 0; i < candidates.length; i++) {
+    if (String(candidates[i].id) === p.id && String(candidates[i].project_id) === projectId) {
+      found = true;
+      break;
+    }
+  }
+  if (!found) return bad;
   var res;
   try {
     res = deps.api("POST", "/tasks/" + p.id + (p.done === "1" ? "/close" : "/reopen"), {});

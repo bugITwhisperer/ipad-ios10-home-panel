@@ -15,8 +15,8 @@
 
    API (JSONP, GET only):
      ?key=K&callback=cb                          -> cb({ok, zakupy:[...], todo:[...]})
-     ?key=K&callback=cb&tick=zakupy&id=5&done=1  -> cb({ok})
-   Item: { id: "<sheet row>", text: "...", done: true|false }
+     ?key=K&callback=cb&tick=zakupy&id=<uuid>&done=1  -> cb({ok})
+   Item: { id: "<stable row UUID>", text: "...", done: true|false }
    A ticked item stays visible until midnight (Europe/Warsaw), then hides.
    Ticking/unticking by hand in the Sheet: onEdit() below keeps column D
    ("Completed at") in step, so a re-ticked item is not hidden by an old date. */
@@ -25,6 +25,7 @@ var FIRST_ROW = 4;                                  /* rows 1-3: title, blank, h
 var SHEETS = { zakupy: "Zakupy", todo: "To do" };  /* API key -> tab name */
 var TZ = "Europe/Warsaw";
 var CALLBACK_RE = /^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/;
+var ROW_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
 
@@ -36,7 +37,24 @@ function cellText(v) {
   return String(v === null || v === undefined ? "" : v).replace(/^\s+|\s+$/g, "");
 }
 
-/* rows: values from FIRST_ROW down, each [checkbox, date, text, doneAt].
+function ensureRowIds(rows, createId) {
+  var ids = [], seen = {}, changed = false, i, id, text;
+  for (i = 0; i < rows.length; i++) {
+    text = cellText(rows[i][2]);
+    id = cellText(rows[i][4]);
+    if (!text) id = "";
+    else if (!ROW_ID_RE.test(id) || hasOwn(seen, id)) {
+      do { id = createId(); } while (!ROW_ID_RE.test(id) || hasOwn(seen, id));
+    }
+    if (id !== rows[i][4]) changed = true;
+    rows[i][4] = id;
+    if (id) seen[id] = true;
+    ids.push([id]);
+  }
+  return { ids: ids, changed: changed };
+}
+
+/* rows: values from FIRST_ROW down, each [checkbox, date, text, doneAt, id].
    today: "yyyy-mm-dd" in Warsaw. dayOf(Date) -> "yyyy-mm-dd" in Warsaw.
    Returns visible items plus the rows that were ticked in the Sheets app
    and still need a "done at" time written. */
@@ -55,7 +73,9 @@ function readList(rows, today, dayOf, now) {
         fills.push({ row: rowNo, doneAt: now });    /* ticked in Sheets: start the clock now */
       }
     }
-    items.push({ id: String(rowNo), text: text, done: done });
+    var id = cellText(r[4]);
+    if (!ROW_ID_RE.test(id)) continue;
+    items.push({ id: id, text: text, done: done });
   }
   return { items: items, fills: fills };
 }
@@ -65,7 +85,7 @@ function isAuthorized(params, secret) {
   return typeof params.key === "string" && params.key === secret;
 }
 
-/* deps: { secret, today, dayOf, now, readRows(name), lastRow(name), writeRow(name, row, [done, doneAt]) } */
+/* deps: { secret, today, dayOf, now, readRows(name), writeRow(name, row, [done, doneAt]) } */
 function handle(params, deps) {
   params = params || {};
   if (!isAuthorized(params, deps.secret)) return { ok: false, error: "auth" };
@@ -86,12 +106,17 @@ function handle(params, deps) {
 function doTick(p, deps) {
   var bad = { ok: false, error: "bad-tick" };
   if (typeof p.tick !== "string" || !hasOwn(SHEETS, p.tick)) return bad;
-  if (typeof p.id !== "string" || !/^[0-9]{1,6}$/.test(p.id)) return bad;
+  if (typeof p.id !== "string" || !ROW_ID_RE.test(p.id)) return bad;
   if (p.done !== "1" && p.done !== "0") return bad;
   var name = SHEETS[p.tick];
-  var row = parseInt(p.id, 10);
-  if (row < FIRST_ROW || row > deps.lastRow(name)) return bad;
-  var r = deps.readRows(name)[row - FIRST_ROW];
+  var rows = deps.readRows(name), row = 0, r = null, i;
+  for (i = 0; i < rows.length; i++) {
+    if (cellText(rows[i][4]) === p.id) {
+      if (r) return bad;                           /* duplicate IDs are ambiguous */
+      row = FIRST_ROW + i;
+      r = rows[i];
+    }
+  }
   if (!r || !cellText(r[2])) return bad;             /* never tick an empty row */
   var done = p.done === "1";
   deps.writeRow(name, row, [done, done ? deps.now : ""]);
@@ -138,11 +163,10 @@ function gasDeps() {
       if (!sh) return [];
       var last = sh.getLastRow();
       if (last < FIRST_ROW) return [];
-      return sh.getRange(FIRST_ROW, 1, last - FIRST_ROW + 1, 4).getValues();
-    },
-    lastRow: function (name) {
-      var sh = sheet(name);
-      return sh ? sh.getLastRow() : 0;
+      var rows = sh.getRange(FIRST_ROW, 1, last - FIRST_ROW + 1, 5).getValues();
+      var idResult = ensureRowIds(rows, function () { return Utilities.getUuid(); });
+      if (idResult.changed) sh.getRange(FIRST_ROW, 5, rows.length, 1).setValues(idResult.ids);
+      return rows;
     },
     writeRow: function (name, row, values) {
       var sh = sheet(name);
@@ -196,8 +220,8 @@ function generateKey() {
 
 if (typeof module !== "undefined") {
   module.exports = {
-    FIRST_ROW: FIRST_ROW, SHEETS: SHEETS,
-    readList: readList, isAuthorized: isAuthorized, handle: handle,
+    FIRST_ROW: FIRST_ROW, SHEETS: SHEETS, ROW_ID_RE: ROW_ID_RE,
+    ensureRowIds: ensureRowIds, readList: readList, isAuthorized: isAuthorized, handle: handle,
     jsonpWrap: jsonpWrap, sheetEditFix: sheetEditFix
   };
 }
