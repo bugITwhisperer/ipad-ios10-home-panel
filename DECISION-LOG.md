@@ -94,3 +94,13 @@ When a decision is replaced, the old row stays and gets **Superseded by #N**.
 | 48 | `EMAIL_E` / `EMAIL_D` no longer read; people come only from `PEOPLE` (supersedes the fallback in #47) | one way to configure, simpler docs and code; `PEOPLE` is already set on the panel account | keeping the fallback — dead code nobody uses |
 | 49 | Sheet fallback IDs are UUIDs stored in column E, generated on first read (supersedes #46's row-number ID) | sorting the Sheet must not make a stale panel tap tick a different item | physical row number as the task ID |
 | 50 | Todoist tick checks the id first: `done=1` only for a task in the panel's active filter, `done=0` only for one completed today, and its project must match the list; otherwise `bad-tick`, no write to Todoist | a leaked URL cannot close or reopen any other task in the account | trusting any id that passes the format check — one extra GET per tick is cheap |
+
+---
+
+## Calendar labels, escaped weather — 2026-10-07
+
+| #  | Decision | Why | Rejected alternative |
+| -- | -------- | --- | -------------------- |
+| 51 | A timed event that ends on a later day names the end day: start day `10:00 – Pt 12:00`, middle days `cały dzień, do Pt 12:00`, last day `do 12:00`; an event ending exactly at 00:00 stays `22:00–00:00`; zero length shows the start time only (refines #42) | a multi-day event showed `10:00–12:00` on its first day, as if it ended the same noon; one rule for every event that runs past midnight | `od 10:00` (end not visible) / end day only for events longer than a day (two formats) / middle days `do Pt 12:00` — kept as the fallback if the longer label proves too long on the iPad |
+| 52 | Weather values from Open-Meteo that go into HTML (precipitation, cell time label) pass through `escapeHtml()` like every other outside value | one rule for all outside data; found in a code review (Copilot), cheap to fix | trusting the public API — low risk, but an exception to remember |
+

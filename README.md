@@ -199,7 +199,9 @@ Na panel trafia tylko to, do czego to konto zostanie **zaproszone** - iPad tylko
 | **Prawa kolumna**        | segment `Jutro / 3 dni / 5 dni / 7 dni` nad kolumnami, liczone od jutra |
 | **Kto**                  | znacznik po twórcy: etykieta i kolor z `PEOPLE` (niżej), inni - login sprzed `@` |
 | **Całodniowe**           | na górze dnia jako „cały dzień”                                         |
-| **Przez północ**         | w obu dniach, drugiego dnia jako „do 02:00”                             |
+| **Przez północ**         | w obu dniach: pierwszego „22:00 – Cz 02:00”, drugiego „do 02:00”        |
+| **Kilka dni**            | „10:00 – Pt 12:00”, potem „cały dzień, do Pt 12:00” na górze dnia, na koniec „do 12:00” |
+| **Bez czasu trwania**    | sama godzina, np. „10:00”                                               |
 | **Dużo wydarzeń**        | 5 na dzień, potem `+N więcej` - najpierw chowają się przekreślone       |
 | **Długi tytuł**          | zawija się, nic nie jest ucinane                                        |
 | **Pobieranie**           | przy wejściu w widok, 8 dni naraz; segment filtruje bez pobierania      |

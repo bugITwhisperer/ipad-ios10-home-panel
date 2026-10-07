@@ -193,7 +193,9 @@ Only events that account is **invited** to reach the panel — the iPad only dis
 | **Right column**     | segment `Jutro / 3 / 5 / 7 dni` (tomorrow / days) above the columns, starting tomorrow |
 | **Who**              | tag by creator: label and colour from `PEOPLE` (below), anyone else — login before `@` |
 | **All-day**          | on top of the day as "cały dzień" (all day)                           |
-| **Past midnight**    | on both days, the second one as "do 02:00" (until 02:00)              |
+| **Past midnight**    | on both days: first "22:00 – Cz 02:00" (end day named), then "do 02:00" (until 02:00) |
+| **Several days**     | "10:00 – Pt 12:00", then "cały dzień, do Pt 12:00" (all day, until Fri 12:00) on top of the day, finally "do 12:00" |
+| **Zero length**      | start time only, e.g. "10:00"                                         |
 | **Many events**      | 5 per day, then `+N więcej` — struck-through ones are hidden first    |
 | **Long title**       | wraps, nothing is cut off                                             |
 | **Fetching**         | when the view opens, 8 days at once; the segment filters locally      |
