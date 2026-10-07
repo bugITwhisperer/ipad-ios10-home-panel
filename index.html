@@ -582,7 +582,7 @@ function cellHtml(c) {
   var s = "";
   s += '<div class="cell' + (c.edge ? " edge" : "") + '"' +
        (c.past ? ' style="opacity:0.42"' : "") + ">";
-  s += '<div class="c-when">' + c.when + "</div>";
+  s += '<div class="c-when">' + escapeHtml(c.when) + "</div>";
   s += '<div class="c-icon">' + c.icon + "</div>";
   s += '<div class="c-temp">' + (c.temp === null ? "--" : c.temp + "\u00B0") + "</div>";
   /* only daily cells carry a min temperature; a missing value keeps the row ("--") so all cells stay the same height */
@@ -601,7 +601,7 @@ function nowHtml(data) {
   s += '<div class="now-temp">' + round(c.temperature_2m) + "\u00B0</div>";
   s += '<div class="now-text">' + w.text + "<br>";
   s += "<span>wiatr " + round(c.wind_speed_10m) + " km/h";
-  s += " &nbsp; opad " + c.precipitation + " mm</span>";
+  s += " &nbsp; opad " + escapeHtml(c.precipitation) + " mm</span>";
   s += "</div></div>";
   return s;
 }
@@ -617,7 +617,7 @@ function miniNowHtml(data) {
   var temp = round(c.temperature_2m);
   var wind = round(c.wind_speed_10m);
   var rain = (c.precipitation === null || c.precipitation === undefined)
-    ? "--" : c.precipitation;
+    ? "--" : escapeHtml(c.precipitation);
   return "<i>" + w.icon + "</i>" +
          "<b>" + (temp === null ? "--" : temp) + "\u00B0</b>" +
          w.text +
@@ -912,15 +912,19 @@ function calItem(e, day, now) {
   if (!(e.start < nextStart && (e.end > dayStart || zeroAtStart))) return null;
   var startsHere = e.start >= dayStart;
   var endsHere = e.end <= nextStart;
+  /* ends on a later day: name that day, e.g. "do Nd 12:00" */
+  var endLabel = DNI_KROTKO[dateOfIso(e.end).getDay()] + " " + hhmm(e.end);
   if (startsHere) {
-    row.time = hhmm(e.start) + "\u2013" + hhmm(e.end);
+    if (e.start === e.end) row.time = hhmm(e.start);                     /* zero length */
+    else if (endsHere) row.time = hhmm(e.start) + "\u2013" + hhmm(e.end);
+    else row.time = hhmm(e.start) + " \u2013 " + endLabel;
     row.key = hhmm(e.start);
   } else if (endsHere) {
     row.time = "do " + hhmm(e.end);
     row.key = "00:00";
   } else {
     row.allDay = true;                 /* runs through the whole day */
-    row.time = "ca\u0142y dzie\u0144";
+    row.time = "ca\u0142y dzie\u0144, do " + endLabel;
   }
   if (now && !row.allDay) row.past = parseLocal(e.end).getTime() <= now.getTime();
   return row;
