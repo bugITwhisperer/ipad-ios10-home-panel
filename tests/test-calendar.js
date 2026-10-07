@@ -252,11 +252,11 @@ test("B14 multi-day event shows on each of its days", function () {
   same(titles(today), ["Wyjazd"], "started yesterday -> still on today");
 });
 
-test("B15 overnight event: both days, second day labelled 'do 02:00'", function () {
+test("B15 overnight event: both days, first shows the end day, second 'do 02:00'", function () {
   var p = h.loadPanel();
   var e = ev("Impreza", "2026-09-26T22:00", "2026-09-27T02:00", "E");
   var days = p.calDays([e], NOW, "3");
-  assert.equal(days[0].items[0].time, "22:00–02:00");
+  assert.equal(days[0].items[0].time, "22:00 – Nd 02:00");
   assert.equal(days[1].items[0].time, "do 02:00");
   assert.equal(days[2].items.length, 0);
   /* 01:00 on Sunday: the running event is still in "Dziś" */
@@ -414,4 +414,45 @@ test("B29 calendar range is its own segment control, weather one unchanged (see 
   var js = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   var paintW = js.match(/function paintWeather\(\) \{[\s\S]*?\n    \}\n/)[0];
   assert.doesNotMatch(paintW, /cal-range/, "weather never reads the calendar range");
+});
+
+/* ---- events that do not fit in one day (labels agreed 2026-10-07, variant c) ---- */
+
+function times(items) { return items.map(function (i) { return i.time; }); }
+
+test("B30 multi-day timed event: start day shows the end day, middle day 'cały dzień, do …'", function () {
+  var p = h.loadPanel();
+  var e = ev("Wyjazd", "2026-09-25T10:00", "2026-09-27T12:00", "E");
+  same(times(p.calToday([e], NOW)), ["10:00 – Nd 12:00"], "Friday (today)");
+  same(p.calDays([e], NOW, "3").map(function (d) { return times(d.items); }),
+       [["cały dzień, do Nd 12:00"], ["do 12:00"], []], "Sat, Sun, Mon");
+});
+
+test("B31 event ending exactly at midnight stays on its own day", function () {
+  var p = h.loadPanel();
+  var e = ev("Kino", "2026-09-26T22:00", "2026-09-27T00:00");
+  same(p.calDays([e], NOW, "3").map(function (d) { return times(d.items); }),
+       [["22:00–00:00"], [], []]);
+});
+
+test("B32 zero-length event: shown once, as a single time", function () {
+  var p = h.loadPanel();
+  var e = ev("Przypomnienie", "2026-09-27T10:00", "2026-09-27T10:00");
+  same(p.calDays([e], NOW, "3").map(function (d) { return times(d.items); }),
+       [[], ["10:00"], []]);
+});
+
+test("B33 zero-length event at midnight: only on that day", function () {
+  var p = h.loadPanel();
+  var e = ev("Północ", "2026-09-27T00:00", "2026-09-27T00:00");
+  same(p.calDays([e], NOW, "3").map(function (d) { return times(d.items); }),
+       [[], ["00:00"], []]);
+});
+
+test("B34 overnight event across the October clock change (25 Oct 2026)", function () {
+  var p = h.loadPanel();
+  var fri = waw("2026-10-23T18:00:00");
+  var e = ev("Impreza", "2026-10-24T22:00", "2026-10-25T02:00");
+  same(p.calDays([e], fri, "3").map(function (d) { return times(d.items); }),
+       [["22:00 – Nd 02:00"], ["do 02:00"], []]);
 });

@@ -854,5 +854,37 @@ t("V5", "znacznik wersji mniejszy niz 11 px", function () {
   ok(fs && Number(fs[1]) <= 9, "font-size #ver, got " + (fs && fs[1]));
 });
 
+console.log("\nGRUPA W - dane pogody pokazane jako tekst");
+
+/* weather values come from an outside API: shown as text, never as HTML */
+function weird() {
+  return { current: { weather_code: 0, temperature_2m: 18,
+                      wind_speed_10m: 10, precipitation: "<b>x</b>" } };
+}
+
+t("W1", "nowHtml: opad jako tekst, nie HTML", function () {
+  var html = app.nowHtml(weird());
+  ok(html.indexOf("<b>x") === -1, "no raw tag");
+  ok(html.indexOf("&lt;b&gt;x&lt;/b&gt;") > -1, "shown as text");
+});
+
+t("W2", "miniNowHtml: opad jako tekst, nie HTML", function () {
+  var html = app.miniNowHtml(weird());
+  ok(html.indexOf("<b>x") === -1, "no raw tag");
+  ok(html.indexOf("&lt;b&gt;x&lt;/b&gt;") > -1, "shown as text");
+});
+
+t("W3", "cellHtml: etykieta czasu jako tekst, nie HTML", function () {
+  var html = app.cellHtml({ when: "<i>12</i>", icon: "", temp: 1, lo: null, rain: 0, wind: 0 });
+  ok(html.indexOf("<i>12") === -1, "no raw tag");
+  ok(html.indexOf("&lt;i&gt;12&lt;/i&gt;") > -1, "shown as text");
+});
+
+t("W4", "zwykle liczby wygladaja jak dotad", function () {
+  var s = weird(); s.current.precipitation = 0.4;
+  ok(app.nowHtml(s).indexOf("opad 0.4 mm") > -1, "nowHtml");
+  ok(app.miniNowHtml(s).indexOf("\uD83D\uDCA7 0.4 mm") > -1, "miniNowHtml");
+});
+
 console.log("\n" + pass + " passed, " + fail + " failed, " + todo + " todo\n");
 process.exit(fail ? 1 : 0);
