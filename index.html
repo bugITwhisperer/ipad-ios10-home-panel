@@ -136,6 +136,7 @@ html, body {
   white-space: normal; word-wrap: break-word; line-height: 1.25;
 }
 .item.done { color: #56687d; text-decoration: line-through; border-left-color: #ffc46b; }
+.item.urgent { border-left-width: 8px; border-left-color: #ff4d4d; }
 .more { font-size: 21px; color: #ffc46b; padding: 10px 14px; }
 .empty { font-size: 22px; color: #56687d; margin: 6px 0; }
 .list-note { font-size: 17px; color: #ffc46b; margin: 10px 0 0 0; }
@@ -217,6 +218,7 @@ body.light #mini u { color: #4d5b6c; }
 body.light .col-head { color: #4d5b6c; }
 body.light .item { background-color: #c8ced6; color: #1f2a37; border-left-color: #939eab; }
 body.light .item.done { color: #5f6c7c; border-left-color: #a0620a; }
+body.light .item.urgent { border-left-color: #c8102e; }
 body.light .more { color: #a0620a; }
 body.light .empty { color: #56647a; }
 body.light .list-note { color: #8a4f00; }
@@ -312,7 +314,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-10-07.1";
+var APP_VERSION = "2026-10-08.1";
 
 var LAT = 51.2465;
 var LON = 22.5684;
@@ -745,7 +747,8 @@ function collapseIfIdle(ls, state, now) {
 }
 
 function itemHtml(id, it) {
-  return '<div class="item' + (it.done ? " done" : "") + '" data-list="' + id +
+  var cls = it.done ? " done" : (it.urgent ? " urgent" : "");   /* red bar only while not done */
+  return '<div class="item' + cls + '" data-list="' + id +
     '" data-id="' + escapeHtml(it.id) + '">' + escapeHtml(it.text) + "</div>";
 }
 

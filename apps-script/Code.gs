@@ -19,6 +19,8 @@
      ?key=K&callback=cb                             -> cb({ok, zakupy:[...], todo:[...]})
      ?key=K&callback=cb&tick=zakupy&id=6Xab&done=1  -> cb({ok})   (done=0 reopens)
    Item: { id: "<Todoist task id>", text: "...", done: true|false }
+   Active p1 tasks (red flag, API priority 4) also carry urgent: true and come
+   first; order: p1 -> other active -> done today, Todoist order inside each.
    Shown: tasks with no date, due today or overdue, plus tasks completed today
    (Europe/Warsaw), struck through until midnight. Recurring tasks are not
    "completed" by Todoist (it moves them to the next date), so those come from
@@ -32,6 +34,7 @@ var LISTS = { zakupy: "Zakupy", todo: "ToDo" };      /* API key -> Todoist proje
 var FILTER = "(no date | today | overdue) & (#" + LISTS.zakupy + " | #" + LISTS.todo + ")";
 var TASK_ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 var MAX_PAGES = 10;                                   /* safety stop for pagination */
+var P1 = 4;                                           /* Todoist API: 4 = p1 (red flag) */
 
 /* Sheet backup: tab names and first data row, used only by onEdit */
 var FIRST_ROW = 4;                                  /* rows 1-3: title, blank, header */
@@ -131,7 +134,7 @@ function handle(params, deps) {
     }
     return null;
   }
-  function add(id, projectId, content, isDone, recurring) {
+  function add(id, projectId, content, isDone, recurring, priority) {
     var list = listOf(projectId);
     var text = cellText(content);
     id = String(id);
@@ -139,6 +142,7 @@ function handle(params, deps) {
     seen[id] = true;
     var item = { id: id, text: text, done: isDone };
     if (recurring) item.recurring = true;
+    if (!isDone && priority === P1) item.urgent = true;
     out[list].push(item);
   }
 
@@ -147,7 +151,9 @@ function handle(params, deps) {
     return !isNaN(at.getTime()) && deps.dayOf(at) === today;
   }
 
-  for (i = 0; i < active.length; i++) add(active[i].id, active[i].project_id, active[i].content, false);
+  for (i = 0; i < active.length; i++) {
+    add(active[i].id, active[i].project_id, active[i].content, false, false, active[i].priority);
+  }
   for (i = 0; i < done.length; i++) {
     if (isToday(done[i].completed_at)) add(done[i].id, done[i].project_id, done[i].content, true);
   }
@@ -156,7 +162,19 @@ function handle(params, deps) {
     if (extra.is_recurring !== true || !isToday(ev.event_date)) continue;   /* normal tasks: see above */
     add(ev.object_id, ev.parent_project_id, extra.content, true, true);
   }
+  for (k in LISTS) if (hasOwn(LISTS, k)) out[k] = urgentFirst(out[k]);
   return out;
+}
+
+/* p1 -> other active -> done; a plain partition keeps Todoist order (no sort) */
+function urgentFirst(items) {
+  var top = [], mid = [], end = [], i;
+  for (i = 0; i < items.length; i++) {
+    if (items[i].done) end.push(items[i]);
+    else if (items[i].urgent) top.push(items[i]);
+    else mid.push(items[i]);
+  }
+  return top.concat(mid, end);
 }
 
 function doTick(p, deps) {
