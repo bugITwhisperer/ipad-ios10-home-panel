@@ -315,7 +315,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-10-10.1";
+var APP_VERSION = "2026-10-10.2";
 
 var LAT = 51.2465;
 var LON = 22.5684;
@@ -1077,7 +1077,8 @@ var RANGES = [
   { v: "5", label: "5 dni" }, { v: "7", label: "7 dni" }
 ];
 
-/* weather and calendar keep separate choices; back to Jutro after a reload */
+/* weather, calendar and list keep separate choices, each saved in localStorage
+   so they survive the nightly reload */
 var LIST_PICKS = [
   { v: "both", label: "2w1" }, { v: "zakupy", label: "Zakupy" }, { v: "todo", label: "ToDo" }
 ];
@@ -1093,6 +1094,28 @@ function pickRange(r, segId, v) {
   if (!known || r[segId] === v) return false;
   r[segId] = v;
   return true;
+}
+
+var SEG_KEY_PREFIX = "panel-seg-";
+
+/* saved values that are missing, unreadable or unknown fall back to the default */
+function loadRanges(store) {
+  var r = createRanges(), k, v;
+  for (k in r) {
+    if (!r.hasOwnProperty(k)) continue;
+    try { v = store ? store.getItem(SEG_KEY_PREFIX + k) : null; }
+    catch (e) { v = null; }
+    if (v !== null) pickRange(r, k, v);
+  }
+  return r;
+}
+
+function saveRange(store, segId, v) {
+  var probe = createRanges();
+  var known = pickRange(probe, segId, v) || probe[segId] === v;   /* default is valid too */
+  if (!store || !known) return false;
+  try { store.setItem(SEG_KEY_PREFIX + segId, v); return true; }
+  catch (e) { return false; }
 }
 
 function segHtml(v, opts) {
@@ -1128,7 +1151,7 @@ if (typeof document !== "undefined") {
     var cs = createCalState();
     var calBusy = false;
     var showCalSetup = false;
-    var ranges = createRanges();
+    var ranges = loadRanges(store);
     var env = {
       document: document, window: window,
       setTimeout: function (f, ms) { return setTimeout(f, ms); },
@@ -1426,7 +1449,9 @@ if (typeof document !== "undefined") {
       var calMore = withAttr(t, "data-calday");
       var seg = withAttr(t, "data-range");
       if (seg) {
-        pickRange(ranges, seg.parentNode.id, seg.getAttribute("data-range"));
+        if (pickRange(ranges, seg.parentNode.id, seg.getAttribute("data-range"))) {
+          saveRange(store, seg.parentNode.id, ranges[seg.parentNode.id]);
+        }
         touched(null);
         return;
       }
@@ -1491,7 +1516,7 @@ if (typeof module !== "undefined") {
     limitItems: limitItems, createCalState: createCalState, needsCalFetch: needsCalFetch,
     onCalResult: onCalResult, calExpand: calExpand, calCollapseIfIdle: calCollapseIfIdle,
     calHtml: calHtml,
-    createRanges: createRanges, LIST_PICKS: LIST_PICKS, pickRange: pickRange, segHtml: segHtml, rangeHead: rangeHead
+    createRanges: createRanges, LIST_PICKS: LIST_PICKS, pickRange: pickRange, loadRanges: loadRanges, saveRange: saveRange, segHtml: segHtml, rangeHead: rangeHead
   };
 }
 </script>
