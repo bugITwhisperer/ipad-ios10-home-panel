@@ -140,7 +140,8 @@ html, body {
 .more { font-size: 21px; color: #ffc46b; padding: 10px 14px; }
 .empty { font-size: 22px; color: #56687d; margin: 6px 0; }
 .list-note { font-size: 17px; color: #ffc46b; margin: 10px 0 0 0; }
-.list-foot { margin-top: 14px; font-size: 15px; }
+/* pinned in line with #ver: flowing under the columns it jumped per range, or fell off-screen */
+.list-foot { position: absolute; left: 26px; bottom: 4px; margin: 0; font-size: 15px; }
 .link { color: #56687d; text-decoration: underline; }
 #setup.off { display: none; }
 #setup input {
@@ -314,7 +315,7 @@ body.light #ver { color: #5f6c7c; }
 <script>
 /* bump on every deploy: date of the change + running number that day.
    Shown in the bottom-right corner, so the iPad's cached version is easy to spot. */
-var APP_VERSION = "2026-10-08.1";
+var APP_VERSION = "2026-10-10.1";
 
 var LAT = 51.2465;
 var LON = 22.5684;
